@@ -694,106 +694,59 @@ body.dark .app-title-section {
 
 /* Input styling improvements */
 .pickup-input-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.pickup-input-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 10px 0;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+  gap: 8px;
 }
 
 .pickup-input-container input {
-  flex: 1;
-  margin: 0;
-}
-
-/* Label styling */
-label {
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
-  margin-bottom: 5px;
-  display: block;
-  text-align: left;
-  font-family: 'Inter', sans-serif;
-}
-
-body.dark label {
-  color: #fff;
-}
-
-/* Location feedback styling */
-.location-feedback {
+  min-width: 120px;
+  max-width: 350px;
+  width: 100%;
   padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  margin: 5px 0;
-  text-align: left;
-}
-
-.location-feedback.loading {
-  background: #e3f2fd;
-  color: #1976d2;
-  border: 1px solid #bbdefb;
-}
-
-.location-feedback.error {
-  background: #ffebee;
-  color: #c62828;
-  border: 1px solid #ffcdd2;
-}
-
-body.dark .location-feedback.loading {
-  background: #1a237e;
-  color: #90caf9;
-  border-color: #3949ab;
-}
-
-body.dark .location-feedback.error {
-  background: #b71c1c;
-  color: #ffcdd2;
-  border-color: #f44336;
-}
-
-/* Form section styling */
-.form-section {
-  margin: 20px 0;
-  padding: 20px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-body.dark .form-section {
-  background: #2a2a2a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* Input improvements */
-input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
-  font-family: 'Inter', sans-serif;
-  border: 2px solid #e1e5e9;
+  font-size: 15px;
+  transition: width 0.2s;
+  box-sizing: border-box;
+  margin: 0;
+  text-align: center;
   border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 16px;
-  transition: all 0.3s ease;
+  border: 2px solid #e1e5e9;
   background: #f8f9fa;
 }
 
-input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="number"]:focus {
-  outline: none;
-  border-color: #667eea;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+/* Icon next to input */
+.pickup-input-row .detect-location-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  min-width: unset;
+  height: 24px;
+  width: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
 }
 
-body.dark input[type="text"], body.dark input[type="email"], body.dark input[type="password"], body.dark input[type="number"] {
-  background: #333;
-  border-color: #555;
-  color: #fff;
-}
-
-body.dark input[type="text"]:focus, body.dark input[type="email"]:focus, body.dark input[type="password"]:focus, body.dark input[type="number"]:focus {
-  background: #404040;
-  border-color: #667eea;
+.pickup-input-row .detect-location-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Ride Confirmation Card Styles */
@@ -1218,37 +1171,121 @@ body.dark .detail-value {
   box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .ride-confirmation-card {
-    margin: 20px 10px;
-    padding: 20px;
+/* Decorative label styling above input boxes */
+.pickup-input-container label,
+.drop-input-container label {
+  display: block;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+  color: #764ba2;
+  background: linear-gradient(90deg, #e0c3fc 0%, #8ec5fc 100%);
+  padding: 6px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+  font-family: 'Poppins', 'Inter', sans-serif;
+}
+
+/* Center and size pickup/drop containers and inputs equally */
+.pickup-input-container,
+.drop-input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.pickup-input-container input,
+.drop-input-container input {
+  min-width: 120px;
+  max-width: 350px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 15px;
+  transition: width 0.2s;
+  box-sizing: border-box;
+  margin: 0;
+  text-align: center;
+  border-radius: 8px;
+  border: 2px solid #e1e5e9;
+  background: #f8f9fa;
+}
+
+/* Make input grow with text */
+.pickup-input-container input:focus,
+.drop-input-container input:focus {
+  min-width: 180px;
+  max-width: 100%;
+  outline: none;
+  border-color: #764ba2;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.08);
+}
+
+/* For mobile, limit max width */
+@media (max-width: 600px) {
+  .pickup-input-container input,
+  .drop-input-container input {
+    max-width: 95vw;
+    min-width: 80px;
+    font-size: 14px;
   }
-  
-  .driver-section {
-    flex-direction: column;
-    text-align: center;
+  .pickup-input-container label,
+  .drop-input-container label {
+    font-size: 1rem;
+    padding: 4px 0;
   }
-  
-  .driver-avatar-container {
-    margin: 0 0 15px 0;
-  }
-  
-  .vehicle-info {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .ride-details-section {
-    grid-template-columns: 1fr;
-  }
-  
-  .action-buttons {
-    grid-template-columns: 1fr;
-  }
-  
-  .otp-number {
-    font-size: 1.8rem;
-    letter-spacing: 4px;
-  }
+}
+
+/* Drop Input Container Styles */
+.drop-input-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.drop-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+  gap: 8px;
+}
+
+.drop-input-container input {
+  min-width: 120px;
+  max-width: 350px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 15px;
+  transition: width 0.2s;
+  box-sizing: border-box;
+  margin: 0;
+  text-align: center;
+  border-radius: 8px;
+  border: 2px solid #e1e5e9;
+  background: #f8f9fa;
+}
+
+/* Dark theme for drop input */
+body.dark .drop-input-container input {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+body.dark .drop-input-container input:focus {
+  background: #404040;
+  border-color: #667eea;
 }

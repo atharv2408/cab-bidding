@@ -510,89 +510,73 @@ function App() {
           </ul>
         </div>
       </nav>
-      <div className="app-header">
-        <div className="app-logo-section">
-          <button onClick={toggleTheme}>
-            Switch to {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-          </button>
-        </div>
-        <div className="user-info">
-          {user.picture && (
-            <img 
-              src={user.picture} 
-              alt="User Avatar" 
-              className="user-avatar"
-            />
-          )}
-          <span>Welcome, {user.name}!</span>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
-        </div>
-      </div>
+      {/* REMOVED: app-header */}
       <div className="app-title-section">
         <h2>BidCab India</h2>
         <p className="app-tagline">Your Ride, Your Price</p>
       </div>
 
       <div>
-        <label>Pickup Location:</label>
         <div className="pickup-input-container">
-          <input
-            value={pickup.address}
-            onChange={(e) => setPickup({ ...pickup, address: e.target.value })}
-            onBlur={() => geocodeAddress(pickup.address, setPickup)}
-            placeholder="Type address or click on map"
-          />
-          <button 
-            onClick={detectCurrentLocation}
-            disabled={locationLoading}
-            className="detect-location-btn"
-            title="Detect My Location"
-          >
-            {locationLoading ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="location-icon loading">
-                <defs>
-                  <linearGradient id="locationGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#4285F4"/>
-                    <stop offset="100%" stopColor="#34A853"/>
-                  </linearGradient>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-                <circle cx="12" cy="12" r="10" fill="url(#locationGradient)" opacity="0.1" filter="url(#glow)">
-                  <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
-                  <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite"/>
-                </circle>
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="url(#locationGradient)"/>
-                <circle cx="12" cy="9" r="2.5" fill="white"/>
-                <circle cx="12" cy="9" r="1" fill="url(#locationGradient)">
-                  <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
-                </circle>
-              </svg>
-            ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="location-icon">
-                <defs>
-                  <linearGradient id="locationGradientStatic" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#4285F4"/>
-                    <stop offset="100%" stopColor="#34A853"/>
-                  </linearGradient>
-                  <filter id="shadow">
-                    <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
-                  </filter>
-                </defs>
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="url(#locationGradientStatic)" filter="url(#shadow)"/>
-                <circle cx="12" cy="9" r="2.5" fill="white"/>
-                <circle cx="12" cy="9" r="1" fill="url(#locationGradientStatic)"/>
-                <circle cx="12" cy="9" r="0.5" fill="white" opacity="0.8"/>
-              </svg>
-            )}
-          </button>
+          <label>Pickup Location</label>
+          <div className="pickup-input-row">
+            <input
+              value={pickup.address}
+              onChange={(e) => setPickup({ ...pickup, address: e.target.value })}
+              onBlur={() => geocodeAddress(pickup.address, setPickup)}
+              placeholder="Type address or click on map"
+            />
+            <button 
+              onClick={detectCurrentLocation}
+              disabled={locationLoading}
+              className="detect-location-btn"
+              title="Detect My Location"
+              tabIndex={-1}
+            >
+              {locationLoading ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="location-icon loading">
+                  <defs>
+                    <linearGradient id="locationGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#4285F4"/>
+                      <stop offset="100%" stopColor="#34A853"/>
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <circle cx="12" cy="12" r="10" fill="url(#locationGradient)" opacity="0.1" filter="url(#glow)">
+                    <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.3;0.1;0.3" dur="2s" repeatCount="indefinite"/>
+                  </circle>
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="url(#locationGradient)"/>
+                  <circle cx="12" cy="9" r="2.5" fill="white"/>
+                  <circle cx="12" cy="9" r="1" fill="url(#locationGradient)">
+                    <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
+                  </circle>
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="location-icon">
+                  <defs>
+                    <linearGradient id="locationGradientStatic" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#4285F4"/>
+                      <stop offset="100%" stopColor="#34A853"/>
+                    </linearGradient>
+                    <filter id="shadow">
+                      <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
+                    </filter>
+                  </defs>
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="url(#locationGradientStatic)" filter="url(#shadow)"/>
+                  <circle cx="12" cy="9" r="2.5" fill="white"/>
+                  <circle cx="12" cy="9" r="1" fill="url(#locationGradientStatic)"/>
+                  <circle cx="12" cy="9" r="0.5" fill="white" opacity="0.8"/>
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
         {locationLoading && (
           <div className="location-feedback loading">
@@ -606,13 +590,15 @@ function App() {
         )}
       </div>
       <div>
-        <label>Drop Location:</label>
-        <input
-          value={drop.address}
-          onChange={(e) => setDrop({ ...drop, address: e.target.value })}
-          onBlur={() => geocodeAddress(drop.address, setDrop)}
-          placeholder="Type address or click on map"
-        />
+        <div className="drop-input-container">
+          <label>Drop Location</label>
+          <input
+            value={drop.address}
+            onChange={(e) => setDrop({ ...drop, address: e.target.value })}
+            onBlur={() => geocodeAddress(drop.address, setDrop)}
+            placeholder="Type address or click on map"
+          />
+        </div>
       </div>
       <div style={{ margin: '10px 0' }}>
         <label>
