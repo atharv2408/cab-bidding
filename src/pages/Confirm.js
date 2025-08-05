@@ -1,20 +1,298 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { database } from '../utils/database';
 
-function Confirm() {
+function Confirm({ appState }) {
   const navigate = useNavigate();
+  const { selectedBid, showRideDetails, setShowRideDetails, rideOTP, setRideOTP, pickup, drop } = appState;
+  const [driverDetails, setDriverDetails] = useState(null);
+  const [estimatedArrival, setEstimatedArrival] = useState('');
+  const [bookingId, setBookingId] = useState('');
 
-  const handleConfirm = () => {
-    navigate('/success');
+  // Generate OTP and get driver details when component mounts
+  useEffect(() => {
+    const fetchDriverDetails = async () => {
+      if (selectedBid) {
+        if (!rideOTP) {
+          setRideOTP(('0000' + Math.floor(Math.random() * 10000)).slice(-4));
+        }
+
+        try {
+          // Get detailed driver info from database
+          const drivers = await database.getDrivers();
+          const driver = drivers.find(d => d.name === selectedBid.driver);
+          if (driver) {
+            setDriverDetails(driver);
+            // Calculate estimated arrival time
+            const now = new Date();
+            const arrivalTime = new Date(now.getTime() + selectedBid.eta * 60000);
+            setEstimatedArrival(arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          }
+        } catch (error) {
+          console.error('Error fetching driver details:', error);
+        }
+
+        // Generate booking ID
+        setBookingId('BC' + Date.now().toString().slice(-6));
+      }
+    };
+
+    fetchDriverDetails();
+  }, [selectedBid, rideOTP, setRideOTP]);
+
+  const handleConfirm = async () => {
+    if (!selectedBid || !driverDetails) {
+      alert('No bid selected. Going back to bids page.');
+      navigate('/bids');
+      return;
+    }
+
+    // Save booking to database
+    const user = JSON.parse(localStorage.getItem('user'));
+    const booking = {
+      userId: user?.id || 'demo-user-123',
+      driverId: driverDetails.id,
+      driverName: selectedBid.driver,
+      pickup: pickup.address,
+      drop: drop.address,
+      price: selectedBid.price,
+      distance: selectedBid.distance,
+      eta: selectedBid.eta,
+      otp: rideOTP,
+      bookingId: bookingId,
+      car: selectedBid.car,
+      driverPhone: driverDetails.phone,
+      estimatedArrival: estimatedArrival
+    };
+
+    try {
+      const savedBooking = await database.saveBooking(booking);
+      console.log('Booking saved:', savedBooking);
+      
+      setShowRideDetails(true);
+      navigate('/success');
+    } catch (error) {
+      console.error('Error saving booking:', error);
+      alert('Failed to save booking. Please try again.');
+    }
   };
 
+  const handleCall = () => {
+    if (driverDetails?.phone) {
+      window.open(`tel:${driverDetails.phone}`);
+    }
+  };
+
+  const handleCancel = () => {
+    if (window.confirm('Are you sure you want to cancel this ride?')) {
+      navigate('/bids');
+    }
+  };
+
+  if (!selectedBid) {
+    return (
+      <div className="container">
+        <h2>No Selection Made</h2>
+        <p>Please go back and select a driver.</p>
+        <button onClick={() => navigate('/bids')}>Go Back to Bids</button>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1>Select Driver</h1>
-      {/* You can improve this with actual bid selection logic */}
-      <button onClick={handleConfirm}>Confirm Ride</button>
+    <div className="container">
+      {/* Enhanced Confirmation Card */}
+      <div className="ride-confirmation-card enhanced">
+        {/* Booking Header */}
+        <div className="confirmation-header">
+          <div className="booking-status">
+            <div className="status-icon">✅</div>
+            <div className="status-text">
+              <h2>Ride Confirmed!</h2>
+              <p>Booking ID: <span className="booking-id">{bookingId}</span></p>
+            </div>
+          </div>
+          {estimatedArrival && (
+            <div className="arrival-time">
+              <div className="arrival-label">Arriving at</div>
+              <div className="arrival-value">{estimatedArrival}</div>
+            </div>
+          )}
+        </div>
+
+        {/* Driver Profile Section */}
+        <div className="driver-profile-section">
+          <div className="driver-header">
+            <h3>Your Driver</h3>
+            <div className="driver-status online">• Online</div>
+          </div>
+          
+          <div className="driver-main-info">
+            <div className="driver-avatar-large">
+              <div className="avatar-circle">{selectedBid.avatar}</div>
+              <div className="verification-badge">✓</div>
+            </div>
+            
+            <div className="driver-details">
+              <h2 className="driver-name">{selectedBid.driver}</h2>
+              
+              <div className="driver-stats">
+                <div className="stat-item">
+                  <span className="stat-icon">⭐</span>
+                  <span className="stat-value">{selectedBid.rating}</span>
+                  <span className="stat-label">Rating</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-icon">🚗</span>
+                  <span className="stat-value">{driverDetails?.totalRides || '1000+'}</span>
+                  <span className="stat-label">Rides</span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-icon">📅</span>
+                  <span className="stat-value">{selectedBid.experience}</span>
+                  <span className="stat-label">Experience</span>
+                </div>
+              </div>
+              
+              {driverDetails?.phone && (
+                <div className="driver-contact">
+                  <span className="contact-icon">📞</span>
+                  <span className="contact-number">{driverDetails.phone}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Vehicle Information */}
+        <div className="vehicle-info-section">
+          <h3>Vehicle Details</h3>
+          <div className="vehicle-card">
+            <div className="vehicle-icon">
+              <span className="car-emoji">🚗</span>
+            </div>
+            <div className="vehicle-info">
+              <h4 className="vehicle-model">{selectedBid.car}</h4>
+              <div className="vehicle-meta">
+                <span className="vehicle-plate">{driverDetails?.car?.plate || 'DL 01 AB 1234'}</span>
+                <span className="vehicle-type">{driverDetails?.car?.type || 'Sedan'}</span>
+              </div>
+              <div className="vehicle-color-info">
+                <span>Color: </span>
+                <span className="color-name">{driverDetails?.car?.color || 'White'}</span>
+                <div className="color-indicator" style={{ background: getColorCode(driverDetails?.car?.color) }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trip Details */}
+        <div className="trip-details-section">
+          <h3>Trip Information</h3>
+          <div className="trip-route">
+            <div className="route-point pickup">
+              <div className="route-icon">📍</div>
+              <div className="route-info">
+                <div className="route-label">Pickup Location</div>
+                <div className="route-address">{pickup.address}</div>
+              </div>
+            </div>
+            
+            <div className="route-line">
+              <div className="route-dots"></div>
+            </div>
+            
+            <div className="route-point drop">
+              <div className="route-icon">🏁</div>
+              <div className="route-info">
+                <div className="route-label">Drop Location</div>
+                <div className="route-address">{drop.address}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="trip-metrics">
+            <div className="metric">
+              <div className="metric-icon">💰</div>
+              <div className="metric-info">
+                <div className="metric-value">₹{selectedBid.price}</div>
+                <div className="metric-label">Total Fare</div>
+              </div>
+            </div>
+            <div className="metric">
+              <div className="metric-icon">📏</div>
+              <div className="metric-info">
+                <div className="metric-value">{selectedBid.distance} km</div>
+                <div className="metric-label">Distance</div>
+              </div>
+            </div>
+            <div className="metric">
+              <div className="metric-icon">⏱️</div>
+              <div className="metric-info">
+                <div className="metric-value">{selectedBid.eta} min</div>
+                <div className="metric-label">ETA</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* OTP Section */}
+        <div className="otp-section-enhanced">
+          <div className="otp-header">
+            <div className="otp-icon">🔐</div>
+            <div className="otp-title">Ride OTP</div>
+          </div>
+          <div className="otp-display-enhanced">
+            <div className="otp-digits">{rideOTP}</div>
+            <div className="otp-copy-btn" onClick={() => navigator.clipboard.writeText(rideOTP)}>📋</div>
+          </div>
+          <div className="otp-instructions">
+            <p>Share this OTP with your driver when boarding</p>
+            <p className="security-note">🛡️ Never share your OTP before boarding the vehicle</p>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="action-buttons-enhanced">
+          <button className="action-btn call-btn" onClick={handleCall}>
+            <span className="btn-icon">📞</span>
+            <span className="btn-text">Call Driver</span>
+          </button>
+          <button className="action-btn message-btn">
+            <span className="btn-icon">💬</span>
+            <span className="btn-text">Message</span>
+          </button>
+          <button className="action-btn track-btn">
+            <span className="btn-icon">📍</span>
+            <span className="btn-text">Track Live</span>
+          </button>
+        </div>
+
+        {/* Main Confirm Button */}
+        <button className="confirm-ride-btn" onClick={handleConfirm}>
+          <span className="confirm-icon">✅</span>
+          <span className="confirm-text">Confirm & Start Ride</span>
+        </button>
+        
+        {/* Cancel Option */}
+        <button className="cancel-ride-link" onClick={handleCancel}>
+          Cancel Booking
+        </button>
+      </div>
     </div>
   );
+
+  function getColorCode(color) {
+    const colors = {
+      'White': '#ffffff',
+      'Silver': '#c0c0c0',
+      'Blue': '#4169e1',
+      'Gray': '#808080',
+      'Red': '#dc143c',
+      'Black': '#000000'
+    };
+    return colors[color] || '#ffffff';
+  }
 }
 
 export default Confirm;
