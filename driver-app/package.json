@@ -1,8 +1,8 @@
 {
-  "name": "cab-bidding-system",
+  "name": "bidcab-driver-app",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://atharv2408.github.io/cab-bidding-system",
+  "homepage": "https://atharv2408.github.io/cab-bidding-system/driver",
   "dependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -21,11 +21,11 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.7.1",
     "react-scripts": "^5.0.1",
+    "socket.io-client": "^4.7.2",
     "typescript": "^4.9.5",
     "web-vitals": "^4.2.4"
   },
   "devDependencies": {
-    "@testing-library/dom": "^10.4.1",
     "gh-pages": "^6.3.0"
   },
   "scripts": {
@@ -35,11 +35,6 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
-  },
-  "jest": {
-    "transformIgnorePatterns": [
-      "node_modules/(?!(axios|react-leaflet|@react-leaflet|leaflet|@leaflet|i18next|react-i18next|react-router-dom)/)"
-    ]
   },
   "browserslist": {
     "production": [

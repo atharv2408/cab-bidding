@@ -1,22 +1,8 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from 'react-leaflet';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-
-const AutoLocationMarker = ({ pickupSet, dropSet, setPickup, setDrop, ReverseGeocode }) => {
-  useMapEvents({
-    click: async (e) => {
-      const { lat, lng } = e.latlng;
-      const address = await ReverseGeocode(lat, lng);
-      if (!pickupSet) {
-        setPickup({ coords: [lat, lng], address });
-      } else if (!dropSet) {
-        setDrop({ coords: [lat, lng], address });
-      }
-    },
-  });
-  return null;
-};
+import PreciseLocationMap from '../components/PreciseLocationMap';
 
 const Home = ({ appState }) => {
   const navigate = useNavigate();
@@ -25,6 +11,9 @@ const Home = ({ appState }) => {
     useSuggestedPrice, setUseSuggestedPrice, locationLoading, setLocationLoading,
     locationError, setLocationError, ReverseGeocode
   } = appState;
+  
+  // The PreciseLocationMap component handles location detection and map centering
+  // We keep the detectLocation function for the manual location button
 
   const geocodeAddress = async (address, setLocation) => {
     try {
@@ -53,8 +42,12 @@ const Home = ({ appState }) => {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
+          const coords = [latitude, longitude];
           const address = await ReverseGeocode(latitude, longitude);
-          setPickup({ coords: [latitude, longitude], address });
+          
+          // Update pickup location (PreciseLocationMap will handle map centering)
+          setPickup({ coords, address });
+          
           setLocationLoading(false);
         } catch (error) {
           setLocationError('Failed to get address for your location.');
@@ -98,63 +91,37 @@ const Home = ({ appState }) => {
 
   return (
     <div className="home-page">
-      {/* Location detection button */}
-      <div className="location-detect-section">
-        <button 
-          onClick={detectLocation} 
-          disabled={locationLoading}
-          className="detect-location-btn"
-          title="Detect my current location"
-        >
-          {locationLoading ? (
-            <>
-              <span className="btn-icon spinning">🔄</span>
-              <span className="btn-text">Detecting...</span>
-            </>
-          ) : (
-            <>
-              <span className="btn-icon">📍</span>
-              <span className="btn-text">Detect My Location</span>
-            </>
-          )}
-        </button>
-        {locationError && (
-          <div className="location-error">
-            <span className="error-icon">⚠️</span>
-            <span className="error-text">{locationError}</span>
-          </div>
-        )}
-      </div>
+      {/* Location error display */}
+      {locationError && (
+        <div className="location-error-display">
+          <span className="error-icon">⚠️</span>
+          <span className="error-text">{locationError}</span>
+        </div>
+      )}
 
       <div className="pickup-input-container">
         <label>Pickup Location</label>
-        <div className="input-group pickup-group" style={{ position: 'relative' }}>
+        <div className="input-with-icon">
           <input
             type="text"
             value={pickup.address}
             onChange={e => setPickup({ ...pickup, address: e.target.value })}
-            placeholder="Enter pickup location"
-            className="pickup-input"
-            style={{ paddingRight: '2.5rem' }} // Add space for icon
+            onBlur={() => geocodeAddress(pickup.address, setPickup)}
+            placeholder="Enter pickup location or click location icon"
+            className="location-input"
           />
           <button
             type="button"
-            className="detect-location-btn"
+            className="location-detect-icon"
             onClick={detectLocation}
-            style={{
-              position: 'absolute',
-              right: '0.5rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0
-            }}
-            title="Detect My Location"
-            tabIndex={0}
+            disabled={locationLoading}
+            title="Detect my current location"
           >
-            <span role="img" aria-label="Detect Location" style={{ fontSize: '1.5rem' }}>📍</span>
+            {locationLoading ? (
+              <span className="detect-icon spinning">⟳</span>
+            ) : (
+              <span className="detect-icon">➤</span>
+            )}
           </button>
         </div>
       </div>
@@ -162,7 +129,6 @@ const Home = ({ appState }) => {
       <div className="drop-input-container">
         <label>Drop Location</label>
         <div className="input-with-icon">
-          <span className="input-icon drop-icon">🏁</span>
           <input
             value={drop.address}
             onChange={(e) => setDrop({ ...drop, address: e.target.value })}
@@ -195,24 +161,25 @@ const Home = ({ appState }) => {
         )}
       </div>
 
-      <MapContainer center={[28.61, 77.23]} zoom={12} style={{ height: '400px', width: '100%' }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
-        {pickup.coords && <Marker position={pickup.coords} />}
-        {drop.coords && <Marker position={drop.coords} />}
-        {pickup.coords && drop.coords && (
-          <Polyline positions={[pickup.coords, drop.coords]} color="blue" />
-        )}
-        <AutoLocationMarker
-          pickupSet={!!pickup.coords}
-          dropSet={!!drop.coords}
-          setPickup={setPickup}
-          setDrop={setDrop}
-          ReverseGeocode={ReverseGeocode}
-        />
-      </MapContainer>
+      {/* Use PreciseLocationMap component for exact location detection */}
+      <PreciseLocationMap
+        pickup={pickup}
+        setPickup={setPickup}
+        drop={drop}
+        setDrop={setDrop}
+        onLocationDetected={(locationData) => {
+          console.log('Precise location detected:', locationData);
+          // The component already handles setting pickup location
+          // This callback can be used for additional actions if needed
+        }}
+        onLocationError={(error) => {
+          setLocationError(error);
+          console.error('Location error:', error);
+        }}
+        ReverseGeocode={ReverseGeocode}
+        className="home-map"
+        height="400px"
+      />
 
       <div className="start-bidding-section">
         <button onClick={startBidding} className="start-bidding-btn">

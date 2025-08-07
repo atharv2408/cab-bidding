@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import './styles/DriverStyles.css';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from 'react-leaflet';
 import L from 'leaflet';
@@ -8,31 +7,33 @@ import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
 import './i18n';
 import { BrowserRouter as Router, Route, Routes, Link, useNavigate, useLocation } from 'react-router-dom';
+import io from 'socket.io-client';
+
+// Components
 import Login from './components/Login';
 import Home from './pages/Home';
-import Bid from './pages/Bid';
-import Confirm from './pages/Confirm';
-import Success from './pages/Success';
+import AvailableRides from './pages/AvailableRides';
+import ActiveRides from './pages/ActiveRides';
+import Earnings from './pages/Earnings';
+import Profile from './pages/Profile';
 import History from './pages/History';
-// Driver App
-import DriverApp from './DriverApp';
 
-// Check if user is authenticated
+// Check if driver is authenticated
 const isAuthenticated = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('driverToken');
   return token !== null;
 };
 
-// Get user data from localStorage
-const getUserData = () => {
-  const userData = localStorage.getItem('user');
-  return userData ? JSON.parse(userData) : null;
+// Get driver data from localStorage
+const getDriverData = () => {
+  const driverData = localStorage.getItem('driver');
+  return driverData ? JSON.parse(driverData) : null;
 };
 
 // Logout function
 const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  localStorage.removeItem('driverToken');
+  localStorage.removeItem('driver');
   window.location.reload();
 };
 
@@ -55,7 +56,7 @@ const ReverseGeocode = async (lat, lon) => {
 };
 
 // Navigation Bar Component
-const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setTheme }) => {
+const NavigationBar = ({ driver, handleLogout, isMenuOpen, toggleMenu, theme, setTheme }) => {
   const location = useLocation().pathname;
   const navigate = useNavigate();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -91,7 +92,7 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setT
     <nav className="app-menubar">
       <div className="menubar-container">
         <div className="menubar-brand" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-          <span className="brand-text">BidCab</span>
+          <span className="brand-text">🚗 BidCab Driver</span>
         </div>
         
         {/* Hamburger Menu Button for Mobile */}
@@ -113,25 +114,34 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setT
               className={location === '/' ? 'active' : ''}
               onClick={handleMenuClick}
             >
-              🏠 Home
+              🏠 Dashboard
             </Link>
           </li>
           <li>
             <Link 
-              to="/bids" 
-              className={location === '/bids' ? 'active' : ''}
+              to="/available-rides" 
+              className={location === '/available-rides' ? 'active' : ''}
               onClick={handleMenuClick}
             >
-              💰 Find My Bid
+              🔍 Available Rides
             </Link>
           </li>
           <li>
             <Link 
-              to="/confirm" 
-              className={location === '/confirm' ? 'active' : ''}
+              to="/active-rides" 
+              className={location === '/active-rides' ? 'active' : ''}
               onClick={handleMenuClick}
             >
-              🚗 Ride Confirm
+              🚗 Active Rides
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/earnings" 
+              className={location === '/earnings' ? 'active' : ''}
+              onClick={handleMenuClick}
+            >
+              💰 Earnings
             </Link>
           </li>
           <li>
@@ -149,23 +159,23 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setT
               onClick={toggleAccountMenu}
               title="Account Menu"
             >
-              👤 Account
+              👤 {driver?.name || 'Driver'}
             </button>
             {isAccountMenuOpen && (
               <div className="account-dropdown">
+                <Link 
+                  to="/profile" 
+                  onClick={handleAccountMenuClick}
+                  className="account-menu-item"
+                >
+                  👤 Profile
+                </Link>
                 <Link 
                   to="/history" 
                   onClick={handleAccountMenuClick}
                   className="account-menu-item"
                 >
-                  🚗 Ride History
-                </Link>
-                <Link 
-                  to="/driver/login" 
-                  onClick={handleAccountMenuClick}
-                  className="account-menu-item driver-link"
-                >
-                  🚙 Driver Portal
+                  📋 History
                 </Link>
                 <button 
                   onClick={() => { handleAccountMenuClick(); handleLogout(); }}
@@ -183,71 +193,84 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setT
 };
 
 function App() {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-
-  useEffect(() => {
-    // Listen to URL changes
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
-    };
-    
-    window.addEventListener('popstate', handlePopState);
-    
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, []);
-
-  // Check if we're in driver mode based on URL
-  const isDriverMode = currentPath.startsWith('/driver');
-
-  if (isDriverMode) {
-    return <DriverApp ReverseGeocode={ReverseGeocode} />;
-  }
-
-  return <CustomerApp />;
-}
-
-// Customer App Component
-function CustomerApp() {
   const { t, i18n } = useTranslation();
   
   // Authentication state
-  const [user, setUser] = useState(null);
+  const [driver, setDriver] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   
   // Menubar state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeMenuItem, setActiveMenuItem] = useState('home');
   
-  // App state - these will be passed as props to child components
-  const [pickup, setPickup] = useState({ coords: null, address: '' });
-  const [drop, setDrop] = useState({ coords: null, address: '' });
-  const [bids, setBids] = useState([]);
-  const [selectedBid, setSelectedBid] = useState(null);
-  const [biddingActive, setBiddingActive] = useState(false);
-  const [selectionTime, setSelectionTime] = useState(false);
-  const [timer, setTimer] = useState(60);
-  const [selectionTimer, setSelectionTimer] = useState(15);
+  // App state - driver specific
+  const [availableRides, setAvailableRides] = useState([]);
+  const [activeRides, setActiveRides] = useState([]);
+  const [driverLocation, setDriverLocation] = useState({ coords: null, address: '' });
+  const [isOnline, setIsOnline] = useState(false);
+  const [myBids, setMyBids] = useState([]);
+  const [earnings, setEarnings] = useState({
+    today: 0,
+    week: 0,
+    month: 0,
+    total: 0
+  });
+  const [socket, setSocket] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-  const [suggestedPrice, setSuggestedPrice] = useState('');
-  const [useSuggestedPrice, setUseSuggestedPrice] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState('');
-  const [rideOTP, setRideOTP] = useState('');
-  const [showRideDetails, setShowRideDetails] = useState(false);
-  const lastBidRef = React.useRef(null);
   
   // Handle login
-  const handleLogin = (userData) => {
-    setUser(userData);
+  const handleLogin = (driverData) => {
+    setDriver(driverData);
     setAuthLoading(false);
+    // Initialize socket connection after login
+    initializeSocket(driverData);
   };
   
   // Handle logout
   const handleLogout = () => {
     logout();
-    setUser(null);
+    setDriver(null);
+    if (socket) {
+      socket.disconnect();
+    }
+  };
+  
+  // Initialize Socket.IO connection
+  const initializeSocket = (driverData) => {
+    const newSocket = io('http://localhost:3001', {
+      query: { driverId: driverData.id, type: 'driver' }
+    });
+    
+    newSocket.on('connect', () => {
+      console.log('Connected to server as driver');
+    });
+    
+    newSocket.on('newRideRequest', (rideData) => {
+      setAvailableRides(prev => [...prev, rideData]);
+      // You can add notification here
+    });
+    
+    newSocket.on('rideAccepted', (rideData) => {
+      setAvailableRides(prev => prev.filter(ride => ride.id !== rideData.id));
+      setActiveRides(prev => [...prev, rideData]);
+    });
+    
+    newSocket.on('bidUpdate', (bidData) => {
+      setMyBids(prev => {
+        const existingIndex = prev.findIndex(bid => bid.id === bidData.id);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = bidData;
+          return updated;
+        } else {
+          return [...prev, bidData];
+        }
+      });
+    });
+    
+    setSocket(newSocket);
   };
   
   // Toggle mobile menu
@@ -255,25 +278,27 @@ function CustomerApp() {
     setIsMenuOpen(!isMenuOpen);
   };
   
-  // Handle menu item click
-  const handleMenuClick = (item) => {
-    setActiveMenuItem(item);
-    setIsMenuOpen(false); // Close mobile menu after selection
-  };
-  
   // Check authentication on component mount
   useEffect(() => {
     const checkAuth = () => {
       if (isAuthenticated()) {
-        const userData = getUserData();
-        setUser(userData);
+        const driverData = getDriverData();
+        setDriver(driverData);
+        initializeSocket(driverData);
       } else {
-        setUser(null);
+        setDriver(null);
       }
       setAuthLoading(false);
     };
     
     checkAuth();
+    
+    // Cleanup socket on unmount
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -283,38 +308,27 @@ function CustomerApp() {
 
   // App state and functions that will be passed to child components
   const appState = {
-    pickup,
-    setPickup,
-    drop,
-    setDrop,
-    bids,
-    setBids,
-    selectedBid,
-    setSelectedBid,
-    biddingActive,
-    setBiddingActive,
-    selectionTime,
-    setSelectionTime,
-    timer,
-    setTimer,
-    selectionTimer,
-    setSelectionTimer,
+    availableRides,
+    setAvailableRides,
+    activeRides,
+    setActiveRides,
+    driverLocation,
+    setDriverLocation,
+    isOnline,
+    setIsOnline,
+    myBids,
+    setMyBids,
+    earnings,
+    setEarnings,
+    socket,
     theme,
     setTheme,
-    suggestedPrice,
-    setSuggestedPrice,
-    useSuggestedPrice,
-    setUseSuggestedPrice,
     locationLoading,
     setLocationLoading,
     locationError,
     setLocationError,
-    rideOTP,
-    setRideOTP,
-    showRideDetails,
-    setShowRideDetails,
-    lastBidRef,
-    ReverseGeocode
+    ReverseGeocode,
+    driver
   };
 
   // Show loading while checking authentication
@@ -322,13 +336,13 @@ function CustomerApp() {
     return (
       <div className="loading-container">
         <div className="loading-spinner">🚗</div>
-        <p>Loading BidCab...</p>
+        <p>Loading BidCab Driver...</p>
       </div>
     );
   }
 
-  // If user is not authenticated, show login page
-  if (!user) {
+  // If driver is not authenticated, show login page
+  if (!driver) {
     return <Login onLogin={handleLogin} />;
   }
 
@@ -336,7 +350,7 @@ function CustomerApp() {
     <Router>
       <div className="App">
         <NavigationBar 
-          user={user}
+          driver={driver}
           handleLogout={handleLogout}
           isMenuOpen={isMenuOpen}
           toggleMenu={toggleMenu}
@@ -351,16 +365,20 @@ function CustomerApp() {
               element={<Home appState={appState} />} 
             />
             <Route 
-              path="/bids" 
-              element={<Bid appState={appState} />} 
+              path="/available-rides" 
+              element={<AvailableRides appState={appState} />} 
             />
             <Route 
-              path="/confirm" 
-              element={<Confirm appState={appState} />} 
+              path="/active-rides" 
+              element={<ActiveRides appState={appState} />} 
             />
             <Route 
-              path="/success" 
-              element={<Success appState={appState} />} 
+              path="/earnings" 
+              element={<Earnings appState={appState} />} 
+            />
+            <Route 
+              path="/profile" 
+              element={<Profile appState={appState} />} 
             />
             <Route 
               path="/history" 
