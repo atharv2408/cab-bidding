@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import './i18n';
 import { BrowserRouter as Router, Route, Routes, Link, useNavigate, useLocation } from 'react-router-dom';
 import Login from './components/Login';
+import CustomerAuth from './components/CustomerAuth';
 import Home from './pages/Home';
 import Bid from './pages/Bid';
 import Confirm from './pages/Confirm';
@@ -17,20 +18,23 @@ import History from './pages/History';
 // Driver App
 import DriverApp from './DriverApp';
 
-// Check if user is authenticated
+// Check if user is authenticated (for customers)
 const isAuthenticated = () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('customerToken');
   return token !== null;
 };
 
 // Get user data from localStorage
 const getUserData = () => {
-  const userData = localStorage.getItem('user');
+  const userData = localStorage.getItem('customerData');
   return userData ? JSON.parse(userData) : null;
 };
 
 // Logout function
 const logout = () => {
+  localStorage.removeItem('customerToken');
+  localStorage.removeItem('customerData');
+  // Also clear any old token formats
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   window.location.reload();
@@ -250,6 +254,11 @@ function CustomerApp() {
     setUser(null);
   };
   
+  // Handle driver login navigation
+  const handleDriverLogin = () => {
+    window.location.href = '/driver/login';
+  };
+  
   // Toggle mobile menu
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -327,48 +336,47 @@ function CustomerApp() {
     );
   }
 
-  // If user is not authenticated, show login page
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   return (
     <Router>
-      <div className="App">
-        <NavigationBar 
-          user={user}
-          handleLogout={handleLogout}
-          isMenuOpen={isMenuOpen}
-          toggleMenu={toggleMenu}
-          theme={theme}
-          setTheme={setTheme}
-        />
-        
-        <main className="main-content">
-          <Routes>
-            <Route 
-              path="/" 
-              element={<Home appState={appState} />} 
-            />
-            <Route 
-              path="/bids" 
-              element={<Bid appState={appState} />} 
-            />
-            <Route 
-              path="/confirm" 
-              element={<Confirm appState={appState} />} 
-            />
-            <Route 
-              path="/success" 
-              element={<Success appState={appState} />} 
-            />
-            <Route 
-              path="/history" 
-              element={<History appState={appState} />} 
-            />
-          </Routes>
-        </main>
-      </div>
+      {!user ? (
+        <CustomerAuth onLogin={handleLogin} onDriverLogin={handleDriverLogin} />
+      ) : (
+        <div className="App">
+          <NavigationBar 
+            user={user}
+            handleLogout={handleLogout}
+            isMenuOpen={isMenuOpen}
+            toggleMenu={toggleMenu}
+            theme={theme}
+            setTheme={setTheme}
+          />
+          
+          <main className="main-content">
+            <Routes>
+              <Route 
+                path="/" 
+                element={<Home appState={appState} />} 
+              />
+              <Route 
+                path="/bids" 
+                element={<Bid appState={appState} />} 
+              />
+              <Route 
+                path="/confirm" 
+                element={<Confirm appState={appState} />} 
+              />
+              <Route 
+                path="/success" 
+                element={<Success appState={appState} />} 
+              />
+              <Route 
+                path="/history" 
+                element={<History appState={appState} />} 
+              />
+            </Routes>
+          </main>
+        </div>
+      )}
     </Router>
   );
 }

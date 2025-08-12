@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../utils/firebase';
+import { supabaseAuth, supabaseDB } from '../utils/supabaseService';
 
 const DriverLogin = ({ onLogin }) => {
   const { t } = useTranslation();
@@ -58,90 +56,117 @@ const DriverLogin = ({ onLogin }) => {
     try {
       if (isLogin) {
         // Login existing driver
-        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-        const user = userCredential.user;
+        const { data: authData, error: authError } = await supabaseAuth.signIn(formData.email, formData.password);
         
-        // Check if user is a driver
-        const driverDoc = await getDoc(doc(db, 'drivers', user.uid));
-        if (!driverDoc.exists()) {
+        if (authError) {
+          throw new Error(authError.message);
+        }
+        
+        const user = authData.user;
+        
+        // Check if user is a driver by finding them in the drivers table
+        const { data: drivers, error: driverError } = await supabaseDB.drivers.getAll();
+        if (driverError) {
+          throw new Error('Failed to check driver status');
+        }
+        
+        const driverRecord = drivers.find(d => d.email === user.email);
+        if (!driverRecord) {
           setError('This account is not registered as a driver');
-          await auth.signOut();
+          await supabaseAuth.signOut();
           return;
         }
 
-        const driverData = driverDoc.data();
         const driverInfo = {
-          uid: user.uid,
+          uid: user.id,
+          id: driverRecord.id,
           email: user.email,
-          name: driverData.name,
-          phone: driverData.phone,
-          vehicleType: driverData.vehicleType,
-          vehicleNumber: driverData.vehicleNumber,
-          licenseNumber: driverData.licenseNumber,
-          rating: driverData.rating || 5.0,
-          totalRides: driverData.totalRides || 0,
+          name: driverRecord.name,
+          phone: driverRecord.phone,
+          vehicleType: driverRecord.vehicle_type,
+          vehicleNumber: driverRecord.vehicle_number,
+          rating: driverRecord.rating || 5.0,
+          totalRides: driverRecord.total_rides || 0,
           isOnline: false,
-          currentLocation: null
+          currentLocation: null,
+          available: driverRecord.available
         };
 
-        localStorage.setItem('driverToken', user.accessToken);
+        localStorage.setItem('driverToken', authData.session.access_token);
         localStorage.setItem('driverData', JSON.stringify(driverInfo));
         
         if (onLogin) onLogin(driverInfo);
         navigate('/driver/dashboard');
       } else {
         // Register new driver
-        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-        const user = userCredential.user;
+        const { data: authData, error: authError } = await supabaseAuth.signUp(
+          formData.email, 
+          formData.password,
+          {
+            full_name: formData.name,
+            phone: formData.phone
+          }
+        );
+        
+        if (authError) {
+          throw new Error(authError.message);
+        }
 
-        // Update display name
-        await updateProfile(user, {
-          displayName: formData.name
-        });
-
-        // Create driver document in Firestore
+        // Create driver record in drivers table
         const driverData = {
-          uid: user.uid,
-          email: user.email,
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          vehicle_type: formData.vehicleType,
+          vehicle_number: formData.vehicleNumber,
+          rating: 5.0,
+          total_rides: 0,
+          available: false // Start offline
+        };
+
+        const { data: driverRecord, error: driverError } = await supabaseDB.drivers.add(driverData);
+        
+        if (driverError) {
+          console.error('Error creating driver record:', driverError);
+          throw new Error('Failed to create driver profile');
+        }
+
+        const driverInfo = {
+          uid: authData.user?.id,
+          id: driverRecord[0].id,
+          email: formData.email,
           name: formData.name,
           phone: formData.phone,
           vehicleType: formData.vehicleType,
           vehicleNumber: formData.vehicleNumber,
-          licenseNumber: formData.licenseNumber,
           rating: 5.0,
           totalRides: 0,
-          joinDate: new Date().toISOString(),
           isOnline: false,
-          isVerified: false, // Requires admin verification
-          status: 'pending' // pending, approved, rejected
+          currentLocation: null,
+          available: false
         };
 
-        await setDoc(doc(db, 'drivers', user.uid), driverData);
-
-        localStorage.setItem('driverToken', user.accessToken);
-        localStorage.setItem('driverData', JSON.stringify(driverData));
+        localStorage.setItem('driverToken', authData.session?.access_token || 'temp-token');
+        localStorage.setItem('driverData', JSON.stringify(driverInfo));
         
-        if (onLogin) onLogin(driverData);
+        if (onLogin) onLogin(driverInfo);
         navigate('/driver/dashboard');
       }
     } catch (error) {
       console.error('Authentication error:', error);
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-          setError('Invalid email or password');
-          break;
-        case 'auth/email-already-in-use':
-          setError('Email is already registered');
-          break;
-        case 'auth/weak-password':
-          setError('Password is too weak');
-          break;
-        case 'auth/invalid-email':
-          setError('Invalid email address');
-          break;
-        default:
-          setError(error.message || 'Authentication failed');
+      
+      // Handle Supabase-specific error messages
+      const message = error.message || 'Authentication failed';
+      if (message.includes('Invalid login credentials') || message.includes('Invalid email or password')) {
+        setError('Invalid email or password');
+      } else if (message.includes('User already registered')) {
+        setError('Email is already registered');
+      } else if (message.includes('Password should be at least')) {
+        setError('Password must be at least 6 characters');
+      } else if (message.includes('Invalid email')) {
+        setError('Invalid email address');
+      } else {
+        setError(message);
       }
     } finally {
       setLoading(false);

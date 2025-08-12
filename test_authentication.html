@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BidCab Authentication Test Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+        .test-step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #fbbf24;
+        }
+        .test-step h3 {
+            margin-top: 0;
+            color: #fbbf24;
+        }
+        .url-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .url-box a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            background: rgba(255, 255, 255, 0.1);
+            margin: 8px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            position: relative;
+            padding-left: 40px;
+        }
+        .checklist li:before {
+            content: "✅";
+            position: absolute;
+            left: 10px;
+        }
+        .warning {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .credentials {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .btn {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 0;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚕 BidCab Authentication Test</h1>
+        
+        <div class="success">
+            <strong>🎉 Your app is ready for testing!</strong><br>
+            The authentication system has been successfully integrated with Supabase.
+        </div>
+
+        <div class="url-box">
+            <strong>Your App URL:</strong><br>
+            <a href="http://localhost:3000" target="_blank">http://localhost:3000</a>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 1: Open Your Application</h3>
+            <p>Click the URL above or manually navigate to <strong>http://localhost:3000</strong></p>
+            <ul class="checklist">
+                <li>You should see the BidCab customer authentication modal</li>
+                <li>The modal should have "Login to BidCab" or "Join BidCab" as the title</li>
+                <li>Email and Password fields should be visible</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 2: Test Customer Registration</h3>
+            <p>Click "Sign up here" to switch to registration mode and use these test credentials:</p>
+            <div class="credentials">
+                <strong>Test Customer Credentials:</strong><br>
+                Email: customer@test.com<br>
+                Password: password123<br>
+                Full Name: Test Customer<br>
+                Phone: +1 234 567 8900
+            </div>
+            <ul class="checklist">
+                <li>Fill out all fields with the credentials above</li>
+                <li>Click "Create Account"</li>
+                <li>Should show success message</li>
+                <li>Should automatically log you into the app</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 3: Test Customer Login</h3>
+            <p>Logout and test login with existing credentials:</p>
+            <ol>
+                <li>Click "Account" → "Logout" in the navigation</li>
+                <li>You should return to the auth modal</li>
+                <li>Make sure "Login" mode is selected</li>
+                <li>Use the same credentials from Step 2</li>
+                <li>Click "Login"</li>
+            </ol>
+            <ul class="checklist">
+                <li>Login should work with the registered credentials</li>
+                <li>Should take you to the main BidCab interface</li>
+                <li>Navigation bar should show account options</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 4: Test Driver Portal Access</h3>
+            <p>From the customer auth modal:</p>
+            <ul class="checklist">
+                <li>Click "Driver Login" button in the modal</li>
+                <li>Should navigate to /driver/login</li>
+                <li>Should see the driver registration/login form</li>
+                <li>Can register as a new driver if needed</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 5: Test Driver Registration (Optional)</h3>
+            <p>At /driver/login, test driver registration:</p>
+            <div class="credentials">
+                <strong>Test Driver Credentials:</strong><br>
+                Email: driver@test.com<br>
+                Password: password123<br>
+                Full Name: Test Driver<br>
+                Phone: +1 987 654 3210<br>
+                Vehicle Type: Sedan<br>
+                Vehicle Number: ABC 123<br>
+                License: DL123456789
+            </div>
+            <ul class="checklist">
+                <li>Fill out driver registration form</li>
+                <li>Should create driver account</li>
+                <li>Should redirect to driver dashboard</li>
+                <li>Should show sample ride requests (if database is set up)</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>Step 6: Verify Database Integration</h3>
+            <p>Check your Supabase dashboard:</p>
+            <ul class="checklist">
+                <li>Go to your Supabase project dashboard</li>
+                <li>Click "Authentication" - should see registered users</li>
+                <li>Click "Table Editor" - should see drivers table with data</li>
+                <li>If you ran the SQL setup, should see sample bookings</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Troubleshooting:</strong><br>
+            <ul>
+                <li>If modal doesn't appear: Check browser console for errors</li>
+                <li>If registration fails: Verify Supabase credentials in .env</li>
+                <li>If "Invalid credentials": Make sure database tables are created</li>
+                <li>If app won't start: Run `npm start` in terminal</li>
+            </ul>
+        </div>
+
+        <div class="success">
+            <strong>🎊 Success Indicators:</strong><br>
+            ✅ Customer auth modal appears<br>
+            ✅ Can register new customer<br>
+            ✅ Login works with credentials<br>
+            ✅ Session persists on refresh<br>
+            ✅ Driver portal accessible<br>
+            ✅ Logout returns to auth modal<br>
+            ✅ No console errors
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="http://localhost:3000" target="_blank" class="btn">
+                🚀 Start Testing Now
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh to show latest status
+        console.log('🚕 BidCab Authentication Test Guide Loaded');
+        console.log('📍 App should be running at: http://localhost:3000');
+        console.log('🔧 If you see any issues, check the browser console and Supabase dashboard');
+    </script>
+</body>
+</html>

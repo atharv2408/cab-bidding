@@ -1,22 +1,9 @@
-// Firebase Firestore database utility
-// Replaces localStorage with cloud-based Firebase Firestore database
+// Supabase database utility
+// Provides database operations using Supabase PostgreSQL database
 
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  updateDoc, 
-  query, 
-  where, 
-  orderBy,
-  writeBatch,
-  serverTimestamp
-} from 'firebase/firestore';
-import { db } from './firebase';
+import { supabaseDB } from './supabaseService';
 
-class FirebaseDatabase {
+class SupabaseDatabase {
   constructor() {
     this.bookingsCollection = 'bookings';
     this.driversCollection = 'drivers';
@@ -27,111 +14,78 @@ class FirebaseDatabase {
   // Initialize with sample data if empty
   async initializeData() {
     try {
-      const driversSnapshot = await getDocs(collection(db, this.driversCollection));
+      const { data: existingDrivers, error } = await supabaseDB.drivers.getAll();
       
-      if (driversSnapshot.empty) {
+      if (!error && (!existingDrivers || existingDrivers.length === 0)) {
         const sampleDrivers = [
           {
-            id: 1,
             name: 'Rajesh Kumar',
             phone: '+91 98765 43210',
+            email: 'rajesh@example.com',
+            vehicle_type: 'Hatchback',
+            vehicle_number: 'DL 01 AB 1234',
             rating: 4.5,
-            experience: '5 years',
-            avatar: '🧔',
-            car: {
-              model: 'Maruti Swift',
-              color: 'White',
-              plate: 'DL 01 AB 1234',
-              type: 'Hatchback'
-            },
+            available: true,
             location: { lat: 28.6139, lng: 77.2090 },
-            status: 'available',
-            totalRides: 1247,
-            reviews: 892
+            earnings: 15000,
+            total_rides: 1247
           },
           {
-            id: 2,
             name: 'Priya Singh',
             phone: '+91 87654 32109',
+            email: 'priya@example.com',
+            vehicle_type: 'Sedan',
+            vehicle_number: 'DL 02 CD 5678',
             rating: 4.7,
-            experience: '3 years',
-            avatar: '👩',
-            car: {
-              model: 'Honda City',
-              color: 'Silver',
-              plate: 'DL 02 CD 5678',
-              type: 'Sedan'
-            },
+            available: true,
             location: { lat: 28.6219, lng: 77.2085 },
-            status: 'available',
-            totalRides: 876,
-            reviews: 654
+            earnings: 12500,
+            total_rides: 876
           },
           {
-            id: 3,
             name: 'Amit Sharma',
             phone: '+91 76543 21098',
+            email: 'amit@example.com',
+            vehicle_type: 'SUV',
+            vehicle_number: 'DL 03 EF 9012',
             rating: 4.2,
-            experience: '7 years',
-            avatar: '👨',
-            car: {
-              model: 'Hyundai Creta',
-              color: 'Blue',
-              plate: 'DL 03 EF 9012',
-              type: 'SUV'
-            },
+            available: true,
             location: { lat: 28.6129, lng: 77.2295 },
-            status: 'available',
-            totalRides: 2156,
-            reviews: 1432
+            earnings: 25000,
+            total_rides: 2156
           },
           {
-            id: 4,
             name: 'Neha Patel',
             phone: '+91 65432 10987',
+            email: 'neha@example.com',
+            vehicle_type: 'MUV',
+            vehicle_number: 'DL 04 GH 3456',
             rating: 4.8,
-            experience: '4 years',
-            avatar: '👩‍💼',
-            car: {
-              model: 'Toyota Innova',
-              color: 'Gray',
-              plate: 'DL 04 GH 3456',
-              type: 'MUV'
-            },
+            available: true,
             location: { lat: 28.6289, lng: 77.2065 },
-            status: 'available',
-            totalRides: 1543,
-            reviews: 1098
+            earnings: 18500,
+            total_rides: 1543
           },
           {
-            id: 5,
             name: 'Vikash Yadav',
             phone: '+91 54321 09876',
+            email: 'vikash@example.com',
+            vehicle_type: 'Sedan',
+            vehicle_number: 'DL 05 IJ 7890',
             rating: 4.3,
-            experience: '6 years',
-            avatar: '🧑',
-            car: {
-              model: 'Maruti Dzire',
-              color: 'Red',
-              plate: 'DL 05 IJ 7890',
-              type: 'Sedan'
-            },
+            available: true,
             location: { lat: 28.6199, lng: 77.2175 },
-            status: 'available',
-            totalRides: 1789,
-            reviews: 1234
+            earnings: 21000,
+            total_rides: 1789
           }
         ];
 
-        // Use batch write to add all sample drivers
-        const batch = writeBatch(db);
-        sampleDrivers.forEach((driver) => {
-          const docRef = doc(collection(db, this.driversCollection));
-          batch.set(docRef, { ...driver, docId: docRef.id, createdAt: serverTimestamp() });
-        });
+        // Add each sample driver
+        for (const driver of sampleDrivers) {
+          await supabaseDB.drivers.add(driver);
+        }
         
-        await batch.commit();
-        console.log('Sample drivers initialized in Firebase');
+        console.log('Sample drivers initialized in Supabase');
       }
     } catch (error) {
       console.error('Error initializing sample data:', error);
@@ -141,51 +95,69 @@ class FirebaseDatabase {
   // Booking operations
   async saveBooking(booking) {
     try {
-      const newBooking = {
-        ...booking,
-        timestamp: serverTimestamp(),
-        status: 'confirmed',
-        createdAt: serverTimestamp()
+      console.log('Attempting to save booking:', booking);
+      
+      // Default coordinates for Delhi if no specific location provided
+      const defaultPickupLocation = { lat: 28.6139, lng: 77.2090 };
+      const defaultDropLocation = { lat: 28.6219, lng: 77.2085 };
+      
+      const bookingData = {
+        customer_name: booking.customerName || booking.customer_name || 'Unknown Customer',
+        customer_phone: booking.customerPhone || booking.customer_phone || '+91 0000000000',
+        pickup_location: booking.pickup?.coords ? 
+          { lat: booking.pickup.coords[0], lng: booking.pickup.coords[1] } : 
+          defaultPickupLocation,
+        drop_location: booking.drop?.coords ? 
+          { lat: booking.drop.coords[0], lng: booking.drop.coords[1] } : 
+          defaultDropLocation,
+        pickup_address: typeof booking.pickup === 'string' ? booking.pickup : (booking.pickup_address || 'Unknown Location'),
+        drop_address: typeof booking.drop === 'string' ? booking.drop : (booking.drop_address || 'Unknown Destination'),
+        distance: parseFloat(booking.distance) || 0,
+        estimated_fare: parseFloat(booking.price || booking.estimated_fare) || 0,
+        status: booking.status || 'pending',
+        payment_method: booking.paymentMethod || booking.payment_method || 'cash',
+        special_requests: booking.specialRequests || booking.special_requests || null
       };
       
-      const docRef = await addDoc(collection(db, this.bookingsCollection), newBooking);
+      // Add optional fields if they exist
+      if (booking.driverId) {
+        bookingData.selected_driver_id = booking.driverId;
+      }
       
-      return {
-        ...newBooking,
-        id: docRef.id,
-        timestamp: new Date().toISOString()
-      };
+      console.log('Processed booking data:', bookingData);
+
+      const { data, error } = await supabaseDB.bookings.add(bookingData);
+      
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
+      
+      console.log('Booking saved successfully:', data);
+      return data[0];
     } catch (error) {
       console.error('Error saving booking:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       throw error;
     }
   }
 
   async getBookings(userId = null) {
     try {
-      let q;
-      if (userId) {
-        q = query(
-          collection(db, this.bookingsCollection), 
-          where('userId', '==', userId)
-        );
-      } else {
-        q = collection(db, this.bookingsCollection);
+      const { data, error } = await supabaseDB.bookings.getAll();
+      
+      if (error) {
+        console.error('Error getting bookings:', error);
+        return [];
       }
       
-      const querySnapshot = await getDocs(q);
-      const bookings = [];
-      
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        bookings.push({
-          ...data,
-          id: doc.id,
-          timestamp: data.timestamp?.toDate?.()?.toISOString() || data.timestamp
-        });
-      });
-      
-      return bookings;
+      // Filter by userId if provided (you might need to add user_id field to bookings table)
+      return userId ? data.filter(booking => booking.user_id === userId) : data;
     } catch (error) {
       console.error('Error getting bookings:', error);
       return [];
@@ -194,18 +166,14 @@ class FirebaseDatabase {
 
   async getBookingById(id) {
     try {
-      const docRef = doc(db, this.bookingsCollection, id);
-      const docSnap = await getDoc(docRef);
+      const { data, error } = await supabaseDB.bookings.getAll();
       
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        return {
-          ...data,
-          id: docSnap.id,
-          timestamp: data.timestamp?.toDate?.()?.toISOString() || data.timestamp
-        };
+      if (error) {
+        console.error('Error getting booking by ID:', error);
+        return null;
       }
-      return null;
+      
+      return data.find(booking => booking.id === id) || null;
     } catch (error) {
       console.error('Error getting booking by ID:', error);
       return null;
@@ -214,14 +182,14 @@ class FirebaseDatabase {
 
   async updateBookingStatus(id, status) {
     try {
-      const docRef = doc(db, this.bookingsCollection, id);
-      await updateDoc(docRef, {
-        status: status,
-        updatedAt: serverTimestamp()
-      });
+      const { data, error } = await supabaseDB.bookings.update(id, { status });
       
-      // Return updated booking
-      return await this.getBookingById(id);
+      if (error) {
+        console.error('Error updating booking status:', error);
+        return null;
+      }
+      
+      return data[0];
     } catch (error) {
       console.error('Error updating booking status:', error);
       return null;
@@ -231,18 +199,26 @@ class FirebaseDatabase {
   // Driver operations
   async getDrivers() {
     try {
-      const querySnapshot = await getDocs(collection(db, this.driversCollection));
-      const drivers = [];
+      const { data, error } = await supabaseDB.drivers.getAll();
       
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        drivers.push({
-          ...data,
-          docId: doc.id
-        });
-      });
+      if (error) {
+        console.error('Error getting drivers:', error);
+        return [];
+      }
       
-      return drivers;
+      // Map to maintain compatibility with existing code
+      return data.map(driver => ({
+        ...driver,
+        docId: driver.id,
+        // Map Supabase fields to legacy field names for compatibility
+        totalRides: driver.total_rides,
+        car: {
+          model: driver.vehicle_type,
+          type: driver.vehicle_type,
+          plate: driver.vehicle_number
+        },
+        status: driver.available ? 'available' : 'offline'
+      }));
     } catch (error) {
       console.error('Error getting drivers:', error);
       return [];
@@ -252,7 +228,7 @@ class FirebaseDatabase {
   async getDriverById(id) {
     try {
       const drivers = await this.getDrivers();
-      return drivers.find(driver => driver.id === parseInt(id) || driver.docId === id);
+      return drivers.find(driver => driver.id === id || driver.docId === id) || null;
     } catch (error) {
       console.error('Error getting driver by ID:', error);
       return null;
@@ -261,20 +237,15 @@ class FirebaseDatabase {
 
   async updateDriverStatus(id, status) {
     try {
-      // First find the driver document
-      const drivers = await this.getDrivers();
-      const driver = drivers.find(d => d.id === parseInt(id) || d.docId === id);
+      const available = status === 'available';
+      const { data, error } = await supabaseDB.drivers.update(id, { available });
       
-      if (driver && driver.docId) {
-        const docRef = doc(db, this.driversCollection, driver.docId);
-        await updateDoc(docRef, {
-          status: status,
-          updatedAt: serverTimestamp()
-        });
-        
-        return await this.getDriverById(id);
+      if (error) {
+        console.error('Error updating driver status:', error);
+        return null;
       }
-      return null;
+      
+      return await this.getDriverById(id);
     } catch (error) {
       console.error('Error updating driver status:', error);
       return null;
@@ -284,25 +255,8 @@ class FirebaseDatabase {
   // User operations
   async getUserBookingHistory(userId) {
     try {
-      const q = query(
-        collection(db, this.bookingsCollection),
-        where('userId', '==', userId),
-        orderBy('timestamp', 'desc')
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const bookings = [];
-      
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        bookings.push({
-          ...data,
-          id: doc.id,
-          timestamp: data.timestamp?.toDate?.()?.toISOString() || data.timestamp
-        });
-      });
-      
-      return bookings;
+      const bookings = await this.getBookings(userId);
+      return bookings.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     } catch (error) {
       console.error('Error getting user booking history:', error);
       return [];
@@ -318,8 +272,8 @@ class FirebaseDatabase {
         totalBookings: userBookings.length,
         completedRides: userBookings.filter(b => b.status === 'completed').length,
         cancelledRides: userBookings.filter(b => b.status === 'cancelled').length,
-        totalSpent: userBookings.reduce((sum, b) => sum + (b.price || 0), 0),
-        averageRating: userBookings.reduce((sum, b) => sum + (b.userRating || 5), 0) / userBookings.length || 5
+        totalSpent: userBookings.reduce((sum, b) => sum + (b.estimated_fare || 0), 0),
+        averageRating: userBookings.reduce((sum, b) => sum + (b.rating || 5), 0) / userBookings.length || 5
       };
     } catch (error) {
       console.error('Error getting booking stats:', error);
@@ -334,4 +288,4 @@ class FirebaseDatabase {
   }
 }
 
-export const database = new FirebaseDatabase();
+export const database = new SupabaseDatabase();

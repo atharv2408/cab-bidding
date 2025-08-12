@@ -48,9 +48,11 @@ function Confirm({ appState }) {
     }
 
     // Save booking to database
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem('customerData') || localStorage.getItem('user') || '{}');
     const booking = {
-      userId: user?.id || 'demo-user-123',
+      userId: user?.uid || user?.id || 'demo-user-123',
+      customerName: user?.name || user?.full_name || 'Demo User',
+      customerPhone: user?.phone || '+91 0000000000',
       driverId: driverDetails.id,
       driverName: selectedBid.driver,
       pickup: pickup.address,
