@@ -66,60 +66,47 @@ function Bid({ appState }) {
     return () => clearInterval(interval);
   }, [selectionTime, bids, setSelectedBid, setSelectionTime, setSelectionTimer, navigate]);
 
-  // Simulate incoming bids
+  // Load real bids from database
   useEffect(() => {
-    if (!biddingActive) return;
     
-    const bidders = [
-      { name: 'Rajesh Kumar', rating: 4.5, avatar: '🧔', car: 'Maruti Swift', experience: '5 years' },
-      { name: 'Priya Singh', rating: 4.7, avatar: '👩', car: 'Honda City', experience: '3 years' },
-      { name: 'Amit Sharma', rating: 4.2, avatar: '👨', car: 'Hyundai Creta', experience: '7 years' },
-      { name: 'Neha Patel', rating: 4.8, avatar: '👩‍💼', car: 'Toyota Innova', experience: '4 years' },
-      { name: 'Vikash Yadav', rating: 4.3, avatar: '🧑', car: 'Maruti Dzire', experience: '6 years' }
-    ];
-    
-    const basePrices = [120, 135, 150, 165, 180];
-    let bidIndex = 0;
-    
-    const addBid = () => {
-      if (bidIndex < bidders.length && biddingActive) {
-        const bidder = bidders[bidIndex];
-        const basePrice = basePrices[bidIndex];
-        const variation = Math.floor(Math.random() * 30) - 15; // ±15 variation
-        const finalPrice = Math.max(basePrice + variation, 100);
+    const loadBids = async () => {
+      try {
+        // Get the current ride request ID from localStorage or state
+        const rideRequestId = localStorage.getItem('currentRideRequestId');
+        if (!rideRequestId) return;
         
-        const newBid = {
-          id: bidIndex + 1,
-          driver: bidder.name,
-          price: finalPrice,
-          rating: bidder.rating,
-          avatar: bidder.avatar,
-          car: bidder.car,
-          experience: bidder.experience,
-          eta: Math.floor(Math.random() * 10) + 3, // 3-13 minutes
-          distance: (Math.random() * 2 + 0.5).toFixed(1) // 0.5-2.5 km
-        };
+        // Import supabaseDB
+        const { supabaseDB } = await import('../utils/supabaseService');
+        const { data: dbBids, error } = await supabaseDB.bids.getByBooking(rideRequestId);
         
-        setBids(prev => {
-          const updated = [...prev, newBid].sort((a, b) => a.price - b.price);
-          return updated;
-        });
-        
-        bidIndex++;
-        
-        // Schedule next bid
-        if (bidIndex < bidders.length) {
-          setTimeout(addBid, Math.random() * 8000 + 2000); // 2-10 seconds
+        if (!error && dbBids) {
+          const formattedBids = dbBids.map(bid => ({
+            id: bid.id,
+            driver_id: bid.driver_id,
+            driver: bid.driver_name,
+            price: bid.amount,
+            rating: bid.driver_rating || 4.5,
+            avatar: bid.driver_name ? bid.driver_name[0].toUpperCase() : '👤',
+            car: bid.vehicle_type || 'Vehicle',
+            experience: '3+ years',
+            eta: Math.floor(Math.random() * 10) + 3,
+            distance: (Math.random() * 2 + 0.5).toFixed(1)
+          })).sort((a, b) => a.price - b.price);
+          
+          setBids(formattedBids);
         }
+      } catch (error) {
+        console.error('Error loading bids:', error);
       }
     };
     
-    // Start first bid after 2 seconds
-    const initialTimeout = setTimeout(addBid, 2000);
+    // Load bids immediately
+    loadBids();
     
-    return () => {
-      clearTimeout(initialTimeout);
-    };
+    // Poll for new bids every 5 seconds
+    const interval = setInterval(loadBids, 5000);
+    
+    return () => clearInterval(interval);
   }, [biddingActive, setBids]);
 
   // Scroll to latest bid
@@ -129,11 +116,51 @@ function Bid({ appState }) {
     }
   }, [bids.length]);
 
-  const acceptBid = (bid) => {
-    setSelectedBid(bid);
-    setBiddingActive(false);
-    setSelectionTime(false);
-    navigate('/confirm');
+  const acceptBid = async (bid) => {
+    try {
+      // Get the current ride request ID
+      const rideRequestId = localStorage.getItem('currentRideRequestId');
+      if (!rideRequestId) {
+        alert('Ride request not found');
+        return;
+      }
+
+      // Import supabaseDB
+      const { supabaseDB } = await import('../utils/supabaseService');
+      
+      // Update the booking status to 'confirmed' and assign the driver
+      const { data, error } = await supabaseDB.bookings.update(rideRequestId, {
+        status: 'confirmed',
+        selected_driver_id: bid.driver_id || bid.id,
+        driver_name: bid.driver,
+        vehicle_type: bid.car,
+        driver_rating: bid.rating,
+        final_fare: bid.price,
+        accepted_at: new Date().toISOString()
+      });
+      
+      if (error) {
+        console.error('Error accepting bid:', error);
+        alert('Failed to accept bid. Please try again.');
+        return;
+      }
+      
+      // Update the accepted bid status in the bids table
+      await supabaseDB.bids.update(bid.id, {
+        status: 'accepted'
+      });
+      
+      // Update local state
+      setSelectedBid(bid);
+      setBiddingActive(false);
+      setSelectionTime(false);
+      
+      // Navigate to confirmation page
+      navigate('/confirm');
+    } catch (error) {
+      console.error('Error accepting bid:', error);
+      alert('Failed to accept bid. Please try again.');
+    }
   };
 
   if (!pickup.address || !drop.address) {
@@ -216,7 +243,30 @@ function Bid({ appState }) {
           {bids.length === 0 && biddingActive && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
               <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🔍</div>
-              <p>Searching for nearby drivers...</p>
+              <p>Waiting for drivers to place bids...</p>
+              <p style={{ fontSize: '0.9rem', marginTop: '10px' }}>Your ride request has been sent to nearby drivers. They will bid on your trip shortly.</p>
+            </div>
+          )}
+          
+          {bids.length === 0 && !biddingActive && (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '10px' }}>😔</div>
+              <p>No bids received</p>
+              <p style={{ fontSize: '0.9rem', marginTop: '10px' }}>Unfortunately, no drivers placed bids for this ride. Please try again later.</p>
+              <button 
+                onClick={() => navigate('/')} 
+                style={{ 
+                  marginTop: '20px', 
+                  padding: '10px 20px', 
+                  background: '#667eea', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '8px', 
+                  cursor: 'pointer' 
+                }}
+              >
+                Back to Home
+              </button>
             </div>
           )}
 
@@ -280,13 +330,12 @@ function Bid({ appState }) {
                   <button 
                     className="accept-bid-btn"
                     onClick={() => acceptBid(bid)}
-                    disabled={biddingActive && !selectionTime}
                     style={{
-                      opacity: (biddingActive && !selectionTime) ? 0.5 : 1,
-                      cursor: (biddingActive && !selectionTime) ? 'not-allowed' : 'pointer'
+                      opacity: 1,
+                      cursor: 'pointer'
                     }}
                   >
-                    {biddingActive && !selectionTime ? 'Bidding...' : 'Select'}
+                    Accept Bid
                   </button>
                 )}
               </div>

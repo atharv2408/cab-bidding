@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import PreciseLocationMap from '../components/PreciseLocationMap';
+import { supabaseDB } from '../utils/supabaseService';
 
 const Home = ({ appState }) => {
   const navigate = useNavigate();
@@ -81,12 +82,60 @@ const Home = ({ appState }) => {
     );
   };
 
-  const startBidding = () => {
+  const startBidding = async () => {
     if (!pickup.address || !drop.address) {
       alert('Please set both pickup and drop locations before starting bidding.');
       return;
     }
-    navigate('/bids');
+
+    try {
+      // Calculate estimated distance and fare
+      const calculateDistance = (pickup, drop) => {
+        if (!pickup.coords || !drop.coords) return 5; // Default distance
+        const R = 6371; // Earth's radius in kilometers
+        const dLat = (drop.coords[0] - pickup.coords[0]) * Math.PI / 180;
+        const dLng = (drop.coords[1] - pickup.coords[1]) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(pickup.coords[0] * Math.PI / 180) * Math.cos(drop.coords[0] * Math.PI / 180) *
+                  Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+      };
+
+      const distance = calculateDistance(pickup, drop);
+      const estimatedFare = Math.round(distance * 15 + 50); // Base fare calculation
+
+      // Create ride request in database
+      const rideRequestData = {
+        customer_name: 'Customer', // You can get this from user auth if available
+        customer_phone: '+91 0000000000', // You can get this from user auth if available
+        pickup_address: pickup.address,
+        drop_address: drop.address,
+        pickup_location: pickup.coords ? { lat: pickup.coords[0], lng: pickup.coords[1] } : null,
+        drop_location: drop.coords ? { lat: drop.coords[0], lng: drop.coords[1] } : null,
+        distance: distance,
+        estimated_fare: useSuggestedPrice && suggestedPrice ? parseFloat(suggestedPrice) : estimatedFare,
+        status: 'pending',
+        payment_method: 'cash'
+      };
+
+      const { data, error } = await supabaseDB.bookings.add(rideRequestData);
+      
+      if (error) {
+        console.error('Error creating ride request:', error);
+        alert('Failed to create ride request. Please try again.');
+        return;
+      }
+
+      // Store the ride request ID for later use
+      localStorage.setItem('currentRideRequestId', data[0].id);
+      
+      // Navigate to bidding page
+      navigate('/bids');
+    } catch (error) {
+      console.error('Error starting bidding:', error);
+      alert('Failed to start bidding. Please try again.');
+    }
   };
 
   return (

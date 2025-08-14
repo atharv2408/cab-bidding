@@ -256,7 +256,8 @@ function CustomerApp() {
   
   // Handle driver login navigation
   const handleDriverLogin = () => {
-    window.location.href = '/driver/login';
+    // Use window.location to navigate to driver mode
+    window.location.pathname = '/driver/login';
   };
   
   // Toggle mobile menu

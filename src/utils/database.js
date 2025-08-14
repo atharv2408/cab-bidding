@@ -114,7 +114,7 @@ class SupabaseDatabase {
         drop_address: typeof booking.drop === 'string' ? booking.drop : (booking.drop_address || 'Unknown Destination'),
         distance: parseFloat(booking.distance) || 0,
         estimated_fare: parseFloat(booking.price || booking.estimated_fare) || 0,
-        status: booking.status || 'pending',
+        status: booking.status || 'pending', // Set default status as pending for bidding
         payment_method: booking.paymentMethod || booking.payment_method || 'cash',
         special_requests: booking.specialRequests || booking.special_requests || null
       };

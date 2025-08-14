@@ -332,7 +332,7 @@ const DriverLogin = ({ onLogin }) => {
             <button 
               type="button" 
               className="customer-btn" 
-              onClick={() => navigate('/')}
+              onClick={() => window.location.pathname = '/'}
             >
               Book a Ride
             </button>

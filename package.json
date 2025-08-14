@@ -2,7 +2,7 @@
   "name": "cab-bidding-system",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://atharv2408.github.io/cab-bidding-system",
+  "homepage": ".",
   "dependencies": {
     "@supabase/supabase-js": "^2.54.0",
     "@testing-library/jest-dom": "^6.6.3",

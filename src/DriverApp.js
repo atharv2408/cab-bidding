@@ -125,7 +125,7 @@ const DriverNavigationBar = ({ driver, handleLogout, isMenuOpen, toggleMenu, the
                   <span className="driver-vehicle">🚙 {driver?.vehicleType}</span>
                 </div>
                 <button 
-                  onClick={() => navigate('/')}
+                  onClick={() => window.location.pathname = '/'}
                   className="account-menu-item"
                 >
                   👤 Switch to Customer
@@ -203,52 +203,65 @@ function DriverApp({ ReverseGeocode }) {
     );
   }
 
-  // If driver is not authenticated, show driver login page
-  if (!driver) {
-    return <DriverLogin onLogin={handleDriverLogin} />;
-  }
-
   return (
     <Router>
       <div className="DriverApp">
-        <DriverNavigationBar 
-          driver={driver}
-          handleLogout={handleDriverLogout}
-          isMenuOpen={isMenuOpen}
-          toggleMenu={toggleMenu}
-          theme={theme}
-          setTheme={setTheme}
-        />
+        {driver && (
+          <DriverNavigationBar 
+            driver={driver}
+            handleLogout={handleDriverLogout}
+            isMenuOpen={isMenuOpen}
+            toggleMenu={toggleMenu}
+            theme={theme}
+            setTheme={setTheme}
+          />
+        )}
         
         <main className="main-content driver-content">
           <Routes>
             <Route 
+              path="/driver/login" 
+              element={<DriverLogin onLogin={handleDriverLogin} />} 
+            />
+            <Route 
               path="/driver/dashboard" 
               element={
-                <DriverDashboard 
-                  driverData={driver}
-                  setDriverData={setDriver}
-                  ReverseGeocode={ReverseGeocode}
-                />
+                driver ? (
+                  <DriverDashboard 
+                    driverData={driver}
+                    setDriverData={setDriver}
+                    ReverseGeocode={ReverseGeocode}
+                  />
+                ) : (
+                  <DriverLogin onLogin={handleDriverLogin} />
+                )
               } 
             />
             <Route 
               path="/driver/history" 
               element={
-                <DriverHistory 
-                  driverData={driver}
-                />
+                driver ? (
+                  <DriverHistory 
+                    driverData={driver}
+                  />
+                ) : (
+                  <DriverLogin onLogin={handleDriverLogin} />
+                )
               } 
             />
-            {/* Redirect any other driver routes to dashboard */}
+            {/* Default route for /driver/* - redirect to login if not authenticated, dashboard if authenticated */}
             <Route 
               path="/driver/*" 
               element={
-                <DriverDashboard 
-                  driverData={driver}
-                  setDriverData={setDriver}
-                  ReverseGeocode={ReverseGeocode}
-                />
+                driver ? (
+                  <DriverDashboard 
+                    driverData={driver}
+                    setDriverData={setDriver}
+                    ReverseGeocode={ReverseGeocode}
+                  />
+                ) : (
+                  <DriverLogin onLogin={handleDriverLogin} />
+                )
               } 
             />
           </Routes>

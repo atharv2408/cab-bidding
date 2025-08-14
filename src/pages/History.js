@@ -177,45 +177,45 @@ function History({ appState }) {
                       {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                     </span>
                   </div>
-                  <div className="booking-date">{formatDate(booking.timestamp)}</div>
+                  <div className="booking-date">{formatDate(booking.timestamp || booking.created_at)}</div>
                 </div>
 
                 <div className="booking-route">
                   <div className="route-point">
                     <div className="route-icon pickup">📍</div>
-                    <div className="route-text">
-                      <div className="route-label">From</div>
-                      <div className="route-address">{booking.pickup}</div>
-                    </div>
+                  <div className="route-text">
+                    <div className="route-label">From</div>
+                    <div className="route-address">{booking.pickup_address || booking.pickup || 'Unknown Location'}</div>
                   </div>
-                  <div className="route-arrow">→</div>
-                  <div className="route-point">
-                    <div className="route-icon drop">🏁</div>
-                    <div className="route-text">
-                      <div className="route-label">To</div>
-                      <div className="route-address">{booking.drop}</div>
-                    </div>
+                </div>
+                <div className="route-arrow">→</div>
+                <div className="route-point">
+                  <div className="route-icon drop">🏁</div>
+                  <div className="route-text">
+                    <div className="route-label">To</div>
+                    <div className="route-address">{booking.drop_address || booking.drop || 'Unknown Destination'}</div>
+                  </div>
                   </div>
                 </div>
 
-                <div className="booking-details">
-                  <div className="detail-item">
-                    <span className="detail-icon">🚗</span>
-                    <span className="detail-text">{booking.driverName}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-icon">🚙</span>
-                    <span className="detail-text">{booking.car}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-icon">📏</span>
-                    <span className="detail-text">{booking.distance} km</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-icon">💰</span>
-                    <span className="detail-text">₹{booking.price}</span>
-                  </div>
+              <div className="booking-details">
+                <div className="detail-item">
+                  <span className="detail-icon">🚗</span>
+                  <span className="detail-text">{booking.driver_name || booking.driverName || 'Driver'}</span>
                 </div>
+                <div className="detail-item">
+                  <span className="detail-icon">🚙</span>
+                  <span className="detail-text">{booking.vehicle_model || booking.car || 'Vehicle'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-icon">📏</span>
+                  <span className="detail-text">{booking.distance || 0} km</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-icon">💰</span>
+                  <span className="detail-text">₹{booking.estimated_fare || booking.price || 0}</span>
+                </div>
+              </div>
 
                 {booking.bookingId && (
                   <div className="booking-id">

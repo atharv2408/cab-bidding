@@ -1,10 +1,18 @@
 import { supabase } from './supabase.js';
 
+// Check if supabase is properly initialized
+const isSupabaseReady = () => {
+  return supabase && typeof supabase.from === 'function';
+};
+
 // Authentication Functions
 export const supabaseAuth = {
   // Sign up new user
   signUp: async (email, password, userData = {}) => {
     try {
+      if (!isSupabaseReady()) {
+        throw new Error('Supabase not initialized');
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -22,6 +30,9 @@ export const supabaseAuth = {
   // Sign in user
   signIn: async (email, password) => {
     try {
+      if (!isSupabaseReady()) {
+        throw new Error('Supabase not initialized');
+      }
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -36,6 +47,9 @@ export const supabaseAuth = {
   // Sign out user
   signOut: async () => {
     try {
+      if (!isSupabaseReady()) {
+        throw new Error('Supabase not initialized');
+      }
       const { error } = await supabase.auth.signOut();
       return { error };
     } catch (error) {
@@ -46,11 +60,17 @@ export const supabaseAuth = {
 
   // Get current user
   getCurrentUser: () => {
+    if (!isSupabaseReady()) {
+      return { data: null, error: new Error('Supabase not initialized') };
+    }
     return supabase.auth.getUser();
   },
 
   // Listen to auth state changes
   onAuthStateChange: (callback) => {
+    if (!isSupabaseReady()) {
+      return () => {}; // Return empty unsubscribe function
+    }
     return supabase.auth.onAuthStateChange(callback);
   }
 };
@@ -135,13 +155,34 @@ export const supabaseDB = {
     // Get all bookings
     getAll: async () => {
       try {
+        if (!isSupabaseReady()) {
+          return { data: [], error: new Error('Supabase not initialized') };
+        }
         const { data, error } = await supabase
           .from('bookings')
           .select('*')
           .order('created_at', { ascending: false });
-        return { data, error };
+        return { data: data || [], error };
       } catch (error) {
         console.error('Get bookings error:', error);
+        return { data: [], error };
+      }
+    },
+
+    // Get booking by ID
+    getById: async (id) => {
+      try {
+        if (!isSupabaseReady()) {
+          return { data: null, error: new Error('Supabase not initialized') };
+        }
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('id', id)
+          .single();
+        return { data, error };
+      } catch (error) {
+        console.error('Get booking by ID error:', error);
         return { data: null, error };
       }
     },
@@ -149,27 +190,30 @@ export const supabaseDB = {
     // Get bookings by status
     getByStatus: async (status) => {
       try {
+        if (!isSupabaseReady()) {
+          return { data: [], error: new Error('Supabase not initialized') };
+        }
         const { data, error } = await supabase
           .from('bookings')
           .select('*')
           .eq('status', status)
           .order('created_at', { ascending: false });
-        return { data, error };
+        return { data: data || [], error };
       } catch (error) {
         console.error('Get bookings by status error:', error);
-        return { data: null, error };
+        return { data: [], error };
       }
     },
 
     // Add new booking
     add: async (bookingData) => {
       try {
+        if (!isSupabaseReady()) {
+          return { data: null, error: new Error('Supabase not initialized') };
+        }
         const { data, error } = await supabase
           .from('bookings')
-          .insert([{
-            ...bookingData,
-            created_at: new Date().toISOString()
-          }])
+          .insert([bookingData])
           .select();
         return { data, error };
       } catch (error) {
@@ -181,12 +225,12 @@ export const supabaseDB = {
     // Update booking
     update: async (id, updateData) => {
       try {
+        if (!isSupabaseReady()) {
+          return { data: null, error: new Error('Supabase not initialized') };
+        }
         const { data, error } = await supabase
           .from('bookings')
-          .update({
-            ...updateData,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', id)
           .select();
         return { data, error };
