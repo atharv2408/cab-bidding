@@ -198,6 +198,316 @@ body.driver-mode {
 
 .driver-stats span {
   background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Driver Active Rides Styles */
+.driver-active-rides {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--driver-bg);
+  min-height: calc(100vh - 80px);
+}
+
+.active-rides-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.active-ride-card {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  background: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.active-ride-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.ride-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+}
+
+.status-badge.confirmed {
+  background: #059669;
+}
+
+.status-badge.in_progress {
+  background: #2563eb;
+}
+
+.ride-time {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.customer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.customer-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.customer-phone {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.customer-phone:hover {
+  text-decoration: underline;
+}
+
+.route-info {
+  margin: 16px 0;
+}
+
+.route-info .pickup,
+.route-info .drop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.route-info .arrow {
+  margin-left: 24px;
+  color: #6b7280;
+  font-size: 1.2rem;
+}
+
+.route-info .address {
+  color: #374151;
+  font-weight: 500;
+}
+
+.ride-metadata {
+  display: flex;
+  gap: 20px;
+  margin: 16px 0;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.fare-info,
+.distance-info {
+  display: flex;
+  gap: 4px;
+}
+
+.fare-info .label,
+.distance-info .label {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.fare {
+  font-weight: 600;
+  color: #059669;
+}
+
+.distance {
+  font-weight: 500;
+  color: #374151;
+}
+
+/* OTP Verification Styles */
+.start-ride-section {
+  margin-top: 20px;
+}
+
+.otp-verification {
+  background: #f0f9ff;
+  border: 2px solid #0ea5e9;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.otp-verification h4 {
+  color: #0369a1;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.otp-instruction {
+  color: #0369a1;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.otp-input-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.otp-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 4px;
+  max-width: 120px;
+}
+
+.otp-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.otp-input.error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.start-ride-btn {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.start-ride-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.start-ride-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.otp-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+/* In Progress Ride Styles */
+.in-progress-section {
+  background: #f0fdf4;
+  border: 2px solid #22c55e;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.progress-info h4 {
+  color: #15803d;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-info p {
+  color: #15803d;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+.progress-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.navigate-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.complete-ride-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.navigate-btn:hover,
+.complete-ride-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.back-to-dashboard-btn {
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-to-dashboard-btn:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.navigation-actions {
+  text-align: center;
+  margin-top: 24px;
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.9rem;

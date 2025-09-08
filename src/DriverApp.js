@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import DriverLogin from './components/DriverLogin';
 import DriverDashboard from './pages/DriverDashboard';
 import DriverHistory from './pages/DriverHistory';
+import DriverActiveRides from './pages/DriverActiveRides';
 
 // Check if driver is authenticated
 const isDriverAuthenticated = () => {
@@ -90,6 +91,15 @@ const DriverNavigationBar = ({ driver, handleLogout, isMenuOpen, toggleMenu, the
               onClick={handleMenuClick}
             >
               🏠 Dashboard
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/driver/active-rides" 
+              className={location === '/driver/active-rides' ? 'active' : ''}
+              onClick={handleMenuClick}
+            >
+              🚗 Active Rides
             </Link>
           </li>
           <li>
@@ -228,6 +238,20 @@ function DriverApp({ ReverseGeocode }) {
               element={
                 driver ? (
                   <DriverDashboard 
+                    driverData={driver}
+                    setDriverData={setDriver}
+                    ReverseGeocode={ReverseGeocode}
+                  />
+                ) : (
+                  <DriverLogin onLogin={handleDriverLogin} />
+                )
+              } 
+            />
+            <Route 
+              path="/driver/active-rides" 
+              element={
+                driver ? (
+                  <DriverActiveRides 
                     driverData={driver}
                     setDriverData={setDriver}
                     ReverseGeocode={ReverseGeocode}

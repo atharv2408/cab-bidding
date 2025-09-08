@@ -66,21 +66,53 @@ function Bid({ appState }) {
     return () => clearInterval(interval);
   }, [selectionTime, bids, setSelectedBid, setSelectionTime, setSelectionTimer, navigate]);
 
-  // Load real bids from database
+  // Load bids - only show drivers who actually placed bids
   useEffect(() => {
+    if (!biddingActive) return;
     
     const loadBids = async () => {
       try {
         // Get the current ride request ID from localStorage or state
         const rideRequestId = localStorage.getItem('currentRideRequestId');
-        if (!rideRequestId) return;
         
-        // Import supabaseDB
-        const { supabaseDB } = await import('../utils/supabaseService');
-        const { data: dbBids, error } = await supabaseDB.bids.getByBooking(rideRequestId);
+        console.log('🔍 Loading actual bids for ride:', rideRequestId);
         
-        if (!error && dbBids) {
-          const formattedBids = dbBids.map(bid => ({
+        let actualBids = [];
+        
+        // Try to load from database first
+        if (rideRequestId && !rideRequestId.startsWith('demo_')) {
+          try {
+            const { supabaseDB } = await import('../utils/supabaseService');
+            const { data: dbBids, error } = await supabaseDB.bids.getByBooking(rideRequestId);
+            
+            if (!error && dbBids && dbBids.length > 0) {
+              console.log('✅ Found database bids:', dbBids.length);
+              actualBids = dbBids.map(bid => ({
+                id: bid.id,
+                driver_id: bid.driver_id,
+                driver: bid.driver_name,
+                price: bid.amount,
+                rating: bid.driver_rating || 4.5,
+                avatar: bid.driver_name ? bid.driver_name[0].toUpperCase() : '👤',
+                car: bid.vehicle_type || 'Vehicle',
+                experience: '3+ years',
+                eta: Math.floor(Math.random() * 10) + 3,
+                distance: (Math.random() * 2 + 0.5).toFixed(1)
+              })).sort((a, b) => a.price - b.price);
+            }
+          } catch (dbError) {
+            console.log('⚠️ Database bids unavailable:', dbError.message);
+          }
+        }
+        
+        // Check for fallback bids in localStorage (bids placed by drivers when DB is unavailable)
+        const fallbackBids = JSON.parse(localStorage.getItem('fallbackBids') || '[]');
+        const rideSpecificBids = JSON.parse(localStorage.getItem(`bids_${rideRequestId}`) || '[]');
+        
+        // Combine fallback bids that match this ride
+        const relevantFallbackBids = [...fallbackBids, ...rideSpecificBids]
+          .filter(bid => bid.booking_id === rideRequestId)
+          .map(bid => ({
             id: bid.id,
             driver_id: bid.driver_id,
             driver: bid.driver_name,
@@ -89,22 +121,38 @@ function Bid({ appState }) {
             avatar: bid.driver_name ? bid.driver_name[0].toUpperCase() : '👤',
             car: bid.vehicle_type || 'Vehicle',
             experience: '3+ years',
-            eta: Math.floor(Math.random() * 10) + 3,
+            eta: Math.floor(Math.random() * 8) + 3,
             distance: (Math.random() * 2 + 0.5).toFixed(1)
-          })).sort((a, b) => a.price - b.price);
-          
-          setBids(formattedBids);
+          }));
+        
+        // Combine all actual bids (database + fallback)
+        const allActualBids = [...actualBids, ...relevantFallbackBids]
+          .sort((a, b) => a.price - b.price);
+        
+        // Remove duplicates based on driver_id
+        const uniqueBids = allActualBids.filter((bid, index, self) => 
+          index === self.findIndex(b => b.driver_id === bid.driver_id)
+        );
+        
+        if (uniqueBids.length > 0) {
+          console.log('✅ Found actual bids from drivers:', uniqueBids.length);
+          setBids(uniqueBids);
+        } else {
+          console.log('📝 No actual bids found - drivers need to place bids first');
+          setBids([]);
         }
+        
       } catch (error) {
-        console.error('Error loading bids:', error);
+        console.error('Error in bid loading:', error);
+        setBids([]); // Clear bids on error
       }
     };
     
     // Load bids immediately
     loadBids();
     
-    // Poll for new bids every 5 seconds
-    const interval = setInterval(loadBids, 5000);
+    // Continue polling for new bids every 3 seconds
+    const interval = setInterval(loadBids, 3000);
     
     return () => clearInterval(interval);
   }, [biddingActive, setBids]);
@@ -125,41 +173,107 @@ function Bid({ appState }) {
         return;
       }
 
-      // Import supabaseDB
-      const { supabaseDB } = await import('../utils/supabaseService');
+      console.log('🎯 Accepting bid from:', bid.driver, 'for ₹' + bid.price);
       
-      // Update the booking status to 'confirmed' and assign the driver
-      const { data, error } = await supabaseDB.bookings.update(rideRequestId, {
-        status: 'confirmed',
-        selected_driver_id: bid.driver_id || bid.id,
-        driver_name: bid.driver,
-        vehicle_type: bid.car,
-        driver_rating: bid.rating,
-        final_fare: bid.price,
-        accepted_at: new Date().toISOString()
-      });
+      let bidAccepted = false;
       
-      if (error) {
-        console.error('Error accepting bid:', error);
-        alert('Failed to accept bid. Please try again.');
-        return;
+      // Try to update database first
+      try {
+        const { supabaseDB } = await import('../utils/supabaseService');
+        
+        // Update the booking status to 'confirmed' and assign the driver
+        const { data, error } = await supabaseDB.bookings.update(rideRequestId, {
+          status: 'confirmed',
+          selected_driver_id: bid.driver_id || bid.id,
+          driver_name: bid.driver,
+          vehicle_type: bid.car,
+          driver_rating: bid.rating,
+          final_fare: bid.price,
+          accepted_at: new Date().toISOString()
+        });
+        
+        if (error) {
+          console.warn('Database booking update failed:', error);
+          throw new Error('Database not available');
+        }
+        
+        // Update the accepted bid status in the bids table (only if bid has database ID)
+        if (bid.id && !bid.id.startsWith('fallback_bid_')) {
+          await supabaseDB.bids.update(bid.id, {
+            status: 'accepted'
+          });
+        }
+        
+        bidAccepted = true;
+        console.log('✅ Bid accepted in database');
+      } catch (dbError) {
+        console.log('⚠️ Database unavailable, using fallback bid acceptance...');
+        
+        // Get the current ride OTP from App state or generate one
+        const currentOTP = localStorage.getItem('currentRideOTP') || 
+          ('0000' + Math.floor(Math.random() * 10000)).slice(-4);
+        localStorage.setItem('currentRideOTP', currentOTP);
+        
+        // Fallback: Store acceptance in localStorage
+        const acceptedBooking = {
+          id: rideRequestId,
+          status: 'confirmed',
+          selected_driver_id: bid.driver_id || bid.id,
+          driver_name: bid.driver,
+          vehicle_type: bid.car,
+          driver_rating: bid.rating,
+          final_fare: bid.price,
+          accepted_at: new Date().toISOString(),
+          pickup_address: pickup.address,
+          drop_address: drop.address,
+          otp: currentOTP,
+          customer_name: localStorage.getItem('customerName') || 'Customer',
+          customer_phone: localStorage.getItem('customerPhone') || '+91 0000000000'
+        };
+        
+        // Store the accepted booking
+        localStorage.setItem('acceptedBooking', JSON.stringify(acceptedBooking));
+        localStorage.setItem(`booking_${rideRequestId}`, JSON.stringify(acceptedBooking));
+        
+        // Update the bid status in fallback storage
+        const fallbackBids = JSON.parse(localStorage.getItem('fallbackBids') || '[]');
+        const updatedFallbackBids = fallbackBids.map(fbBid => 
+          fbBid.id === bid.id ? { ...fbBid, status: 'accepted' } : fbBid
+        );
+        localStorage.setItem('fallbackBids', JSON.stringify(updatedFallbackBids));
+        
+        // Also update ride-specific bids
+        const rideSpecificBids = JSON.parse(localStorage.getItem(`bids_${rideRequestId}`) || '[]');
+        const updatedRideSpecificBids = rideSpecificBids.map(rbBid => 
+          rbBid.id === bid.id ? { ...rbBid, status: 'accepted' } : rbBid
+        );
+        localStorage.setItem(`bids_${rideRequestId}`, JSON.stringify(updatedRideSpecificBids));
+        
+        bidAccepted = true;
+        console.log('✅ Bid accepted in fallback mode');
       }
       
-      // Update the accepted bid status in the bids table
-      await supabaseDB.bids.update(bid.id, {
-        status: 'accepted'
-      });
+      if (bidAccepted) {
+        // Update local state
+        setSelectedBid(bid);
+        setBiddingActive(false);
+        setSelectionTime(false);
+        
+        console.log('🚗 Ride confirmed with driver:', bid.driver);
+        
+        // Navigate to confirmation page
+        navigate('/confirm');
+      }
       
-      // Update local state
-      setSelectedBid(bid);
-      setBiddingActive(false);
-      setSelectionTime(false);
-      
-      // Navigate to confirmation page
-      navigate('/confirm');
     } catch (error) {
-      console.error('Error accepting bid:', error);
-      alert('Failed to accept bid. Please try again.');
+      console.error('Full error accepting bid:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        bidData: bid,
+        rideRequestId: localStorage.getItem('currentRideRequestId')
+      });
+      alert('Failed to accept bid. Please check console for details and try again.');
     }
   };
 
@@ -231,9 +345,9 @@ function Bid({ appState }) {
       {/* Bids Section */}
       <div className="bids-section">
         <div className="bids-header">
-          <h3>Available Drivers ({bids.length})</h3>
+          <h3>Driver Bids ({bids.length})</h3>
           <p className="bids-subtitle">
-            {biddingActive ? 'Drivers are bidding for your ride' : 
+            {biddingActive ? (bids.length > 0 ? 'Drivers who have placed bids' : 'Waiting for drivers to place bids') : 
              selectionTime ? 'Choose your preferred driver' : 
              'Bidding completed'}
           </p>

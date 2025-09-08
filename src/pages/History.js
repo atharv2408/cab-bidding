@@ -15,14 +15,63 @@ function History({ appState }) {
 
   const loadBookingHistory = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const userId = user?.id || 'demo-user-123';
+      const user = JSON.parse(localStorage.getItem('user') || localStorage.getItem('customerData') || '{}');
+      const userId = user?.id || user?.uid || 'demo-user-123';
       
-      const userBookings = await database.getUserBookingHistory(userId);
-      const userStats = await database.getBookingStats(userId);
+      let allBookings = [];
       
-      setBookings(userBookings);
-      setStats(userStats);
+      // Try to load from database first
+      try {
+        const userBookings = await database.getUserBookingHistory(userId);
+        if (userBookings && userBookings.length > 0) {
+          allBookings = userBookings;
+          console.log('✅ Found database booking history:', allBookings.length);
+        }
+      } catch (dbError) {
+        console.log('⚠️ Database unavailable, checking localStorage...');
+      }
+      
+      // Fallback: Load from localStorage
+      if (allBookings.length === 0) {
+        const localHistory = JSON.parse(localStorage.getItem('customerRideHistory') || '[]');
+        const confirmedBookings = JSON.parse(localStorage.getItem('confirmedBooking') || '{}');
+        
+        // Add confirmed booking if it exists
+        if (confirmedBookings.id) {
+          localHistory.unshift(confirmedBookings);
+        }
+        
+        // Remove duplicates based on ID
+        const uniqueBookings = localHistory.filter((booking, index, self) => 
+          index === self.findIndex(b => b.id === booking.id)
+        );
+        
+        allBookings = uniqueBookings;
+        console.log('📝 Found localStorage booking history:', allBookings.length);
+      }
+      
+      // Sort by date (newest first)
+      allBookings.sort((a, b) => 
+        new Date(b.completed_at || b.timestamp || b.created_at) - 
+        new Date(a.completed_at || a.timestamp || a.created_at)
+      );
+      
+      setBookings(allBookings);
+      
+      // Calculate stats from actual booking data
+      const completedRides = allBookings.filter(b => b.status === 'completed');
+      const totalSpent = allBookings.reduce((sum, b) => 
+        sum + parseFloat(b.final_fare || b.estimated_fare || b.price || 0), 0
+      );
+      
+      setStats({
+        totalBookings: allBookings.length,
+        completedRides: completedRides.length,
+        cancelledRides: allBookings.filter(b => b.status === 'cancelled').length,
+        totalSpent: totalSpent,
+        averageRating: 4.8 // Can be calculated from actual ratings later
+      });
+      
     } catch (error) {
       console.error('Error loading booking history:', error);
       setBookings([]);

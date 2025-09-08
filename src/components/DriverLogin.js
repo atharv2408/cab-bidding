@@ -119,26 +119,57 @@ const DriverLogin = ({ onLogin }) => {
           email: formData.email,
           vehicle_type: formData.vehicleType,
           vehicle_number: formData.vehicleNumber,
+          vehicle_model: '', // Can be added later
+          license_number: formData.licenseNumber,
           rating: 5.0,
           total_rides: 0,
-          available: false // Start offline
+          available: false, // Start offline
+          location: null
         };
 
-        const { data: driverRecord, error: driverError } = await supabaseDB.drivers.add(driverData);
-        
-        if (driverError) {
-          console.error('Error creating driver record:', driverError);
-          throw new Error('Failed to create driver profile');
+        let driverRecord = null;
+        let driverId = null;
+
+        // Try to create driver record in database
+        try {
+          const { data: dbDriverRecord, error: driverError } = await supabaseDB.drivers.add(driverData);
+          
+          if (driverError) {
+            console.warn('Supabase driver creation failed:', driverError);
+            throw new Error('Database not available');
+          }
+          
+          driverRecord = dbDriverRecord[0];
+          driverId = driverRecord.id;
+          console.log('✅ Driver profile created in database:', driverId);
+        } catch (dbError) {
+          console.log('Database unavailable, using fallback driver registration...');
+          
+          // Fallback: Create a temporary driver ID and store locally
+          driverId = 'driver_' + Date.now();
+          driverRecord = {
+            id: driverId,
+            ...driverData,
+            created_at: new Date().toISOString()
+          };
+          
+          // Store driver data in localStorage as backup
+          const existingDrivers = JSON.parse(localStorage.getItem('fallbackDrivers') || '[]');
+          existingDrivers.push(driverRecord);
+          localStorage.setItem('fallbackDrivers', JSON.stringify(existingDrivers));
+          
+          console.log('✅ Driver profile created in fallback mode:', driverId);
         }
 
         const driverInfo = {
           uid: authData.user?.id,
-          id: driverRecord[0].id,
+          id: driverId,
           email: formData.email,
           name: formData.name,
           phone: formData.phone,
           vehicleType: formData.vehicleType,
           vehicleNumber: formData.vehicleNumber,
+          licenseNumber: formData.licenseNumber,
           rating: 5.0,
           totalRides: 0,
           isOnline: false,
