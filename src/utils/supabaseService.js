@@ -82,12 +82,51 @@ export const supabaseDB = {
     // Get all drivers
     getAll: async () => {
       try {
+        if (!isSupabaseReady()) {
+          return { data: [], error: new Error('Supabase not initialized') };
+        }
         const { data, error } = await supabase
           .from('drivers')
           .select('*');
-        return { data, error };
+        return { data: data || [], error };
       } catch (error) {
         console.error('Get drivers error:', error);
+        return { data: [], error };
+      }
+    },
+
+    // Get driver by email
+    getByEmail: async (email) => {
+      try {
+        if (!isSupabaseReady()) {
+          return { data: null, error: new Error('Supabase not initialized') };
+        }
+        const { data, error } = await supabase
+          .from('drivers')
+          .select('*')
+          .eq('email', email)
+          .single();
+        return { data, error };
+      } catch (error) {
+        console.error('Get driver by email error:', error);
+        return { data: null, error };
+      }
+    },
+
+    // Get driver by ID
+    getById: async (id) => {
+      try {
+        if (!isSupabaseReady()) {
+          return { data: null, error: new Error('Supabase not initialized') };
+        }
+        const { data, error } = await supabase
+          .from('drivers')
+          .select('*')
+          .eq('id', id)
+          .single();
+        return { data, error };
+      } catch (error) {
+        console.error('Get driver by ID error:', error);
         return { data: null, error };
       }
     },
@@ -109,6 +148,9 @@ export const supabaseDB = {
     // Add new driver
     add: async (driverData) => {
       try {
+        if (!isSupabaseReady()) {
+          return { data: null, error: new Error('Supabase not initialized') };
+        }
         const { data, error } = await supabase
           .from('drivers')
           .insert([driverData])

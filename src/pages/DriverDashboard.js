@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabaseDB } from '../utils/supabaseService';
-import DriverBidNotification from '../components/DriverBidNotification';
+import EnhancedOTPNotification from '../components/EnhancedOTPNotification';
 
 const DriverDashboard = ({ driverData }) => {
   const navigate = useNavigate();
@@ -22,10 +22,11 @@ const DriverDashboard = ({ driverData }) => {
       return;
     }
 
-    // Load available rides - try database first, fallback to mock data
+    // Load available rides - try database first, fallback to localStorage with deduplication
     const loadRides = async () => {
       try {
-        let ridesFound = false;
+        let allRides = [];
+        const rideIds = new Set(); // Track unique ride IDs to prevent duplicates
         
         // Try to load from database first
         try {
@@ -38,7 +39,7 @@ const DriverDashboard = ({ driverData }) => {
             
             const liveRides = rides.filter(ride => {
               const rideCreated = new Date(ride.created_at);
-              return rideCreated >= sixtySecondsAgo;
+              return rideCreated >= sixtySecondsAgo && !rideIds.has(ride.id);
             });
             
             if (liveRides.length > 0) {
@@ -51,15 +52,19 @@ const DriverDashboard = ({ driverData }) => {
                       bid.driver_id === (driver.id || driver.uid)
                     );
                     
+                    rideIds.add(ride.id); // Mark as processed
                     return {
                       ...ride,
+                      source: 'database',
                       hasDriverBid,
                       timeRemaining: Math.max(0, Math.floor((new Date(ride.created_at).getTime() + 60 * 1000 - now.getTime()) / 1000))
                     };
                   } catch (error) {
                     console.error('Error checking bids for ride:', ride.id, error);
+                    rideIds.add(ride.id);
                     return {
                       ...ride,
+                      source: 'database',
                       hasDriverBid: false,
                       timeRemaining: Math.max(0, Math.floor((new Date(ride.created_at).getTime() + 60 * 1000 - now.getTime()) / 1000))
                     };
@@ -67,78 +72,54 @@ const DriverDashboard = ({ driverData }) => {
                 })
               );
               
-              setAvailableRides(ridesWithBidStatus);
-              ridesFound = true;
+              allRides.push(...ridesWithBidStatus);
             }
           }
         } catch (dbError) {
           console.log('⚠️ Database rides unavailable:', dbError.message);
         }
         
-        // Fallback to check for active customer ride requests in localStorage
-        if (!ridesFound) {
-          console.log('📝 Checking for demo/local ride requests...');
+        // Only check localStorage fallback if we have no database rides
+        if (allRides.length === 0) {
+          console.log('📝 Checking for local ride requests...');
           
           // Check if there are any active ride requests from customers
           const currentRideRequestId = localStorage.getItem('currentRideRequestId');
           const currentRideRequest = JSON.parse(localStorage.getItem('currentRideRequest') || '{}');
           
-          if (currentRideRequestId && currentRideRequest.pickup_address) {
-            console.log('🚗 Found active customer ride request:', currentRideRequestId);
+          if (currentRideRequestId && currentRideRequest.pickup_address && !rideIds.has(currentRideRequestId)) {
+            const nowTs = Date.now();
+            const createdTs = currentRideRequest.created_at ? new Date(currentRideRequest.created_at).getTime() : nowTs;
+            const timeRemaining = Math.max(0, Math.floor((createdTs + 60 * 1000 - nowTs) / 1000));
             
-            // Create a mock ride request for drivers to bid on
-            const mockRide = {
-              id: currentRideRequestId,
-              customer_name: currentRideRequest.customer_name || 'Customer',
-              customer_phone: currentRideRequest.customer_phone || '+91 0000000000',
-              pickup_address: currentRideRequest.pickup_address,
-              drop_address: currentRideRequest.drop_address,
-              distance: currentRideRequest.distance || 5.2,
-              estimated_fare: currentRideRequest.estimated_fare || 100,
-              status: 'pending',
-              created_at: new Date().toISOString(),
-              hasDriverBid: false,
-              timeRemaining: 45 // Always show some time remaining for demo
-            };
-            
-            setAvailableRides([mockRide]);
-            ridesFound = true;
-          }
-          
-          // If still no rides found, create demo rides periodically
-          if (!ridesFound) {
-            // Create a demo ride occasionally for drivers to practice with
-            const shouldShowDemo = Math.random() < 0.3; // 30% chance
-            if (shouldShowDemo) {
-              const demoLocations = [
-                { pickup: 'Connaught Place, New Delhi', drop: 'India Gate, New Delhi', distance: 4.2, fare: 95 },
-                { pickup: 'Karol Bagh, New Delhi', drop: 'Lajpat Nagar, New Delhi', distance: 8.1, fare: 140 },
-                { pickup: 'Rajouri Garden, New Delhi', drop: 'CP Metro Station, New Delhi', distance: 6.5, fare: 115 }
-              ];
-              
-              const demoLocation = demoLocations[Math.floor(Math.random() * demoLocations.length)];
-              
-              const demoRide = {
-                id: 'demo_ride_' + Date.now(),
-                customer_name: 'Demo Customer',
-                customer_phone: '+91 9999999999',
-                pickup_address: demoLocation.pickup,
-                drop_address: demoLocation.drop,
-                distance: demoLocation.distance,
-                estimated_fare: demoLocation.fare,
+            if (timeRemaining > 0) {
+              console.log('🚗 Found active local ride request:', currentRideRequestId);
+              const mockRide = {
+                id: currentRideRequestId,
+                customer_name: currentRideRequest.customer_name || 'Customer',
+                customer_phone: currentRideRequest.customer_phone || '+91 0000000000',
+                pickup_address: currentRideRequest.pickup_address,
+                drop_address: currentRideRequest.drop_address,
+                distance: currentRideRequest.distance || 5.2,
+                estimated_fare: currentRideRequest.estimated_fare || 100,
                 status: 'pending',
-                created_at: new Date().toISOString(),
+                source: 'localStorage',
+                created_at: new Date(createdTs).toISOString(),
                 hasDriverBid: false,
-                timeRemaining: 50
+                timeRemaining
               };
-              
-              setAvailableRides([demoRide]);
-              console.log('🎭 Created demo ride for driver practice:', demoRide.pickup_address);
+              rideIds.add(currentRideRequestId); // Mark as processed
+              allRides.push(mockRide);
             } else {
-              setAvailableRides([]);
+              // Cleanup stale local request
+              localStorage.removeItem('currentRideRequestId');
+              localStorage.removeItem('currentRideRequest');
             }
           }
         }
+        
+        // Set the final deduplicated rides
+        setAvailableRides(allRides);
       } catch (error) {
         console.error('Error loading rides:', error);
         setAvailableRides([]);
@@ -149,13 +130,62 @@ const DriverDashboard = ({ driverData }) => {
 
     loadRides();
 
-    // Set up a refresh interval to check for new ride requests
+    // Set up a refresh interval to check for new ride requests (less frequent to avoid spam)
     const refreshInterval = setInterval(() => {
       loadRides();
-    }, 5000); // Refresh every 5 seconds for real-time updates
+    }, 10000); // Refresh every 10 seconds to reduce duplicate checks
 
-    // Clean up interval on component unmount
-    return () => clearInterval(refreshInterval);
+    // Set up a cleanup interval to remove expired rides
+    const cleanupInterval = setInterval(() => {
+      setAvailableRides(prev => {
+        const now = Date.now();
+        const validRides = prev.filter(ride => {
+          const rideCreated = new Date(ride.created_at).getTime();
+          const timeRemaining = Math.max(0, Math.floor((rideCreated + 60 * 1000 - now) / 1000));
+          
+          if (timeRemaining <= 0) {
+            console.log('🧹 Removing expired ride:', ride.id);
+            
+            // Clean up related localStorage data for expired ride
+            try {
+              localStorage.removeItem(`bids_${ride.id}`);
+              localStorage.removeItem(`ride_request_${ride.id}`);
+              localStorage.removeItem(`booking_${ride.id}`);
+              
+              // Remove from fallback bids if it's there
+              const fallbackBids = JSON.parse(localStorage.getItem('fallbackBids') || '[]');
+              const cleanedFallbackBids = fallbackBids.filter(bid => bid.booking_id !== ride.id);
+              if (cleanedFallbackBids.length !== fallbackBids.length) {
+                localStorage.setItem('fallbackBids', JSON.stringify(cleanedFallbackBids));
+                console.log('🧹 Cleaned up expired bid data for ride:', ride.id);
+              }
+              
+              // Clean up current ride request if it matches
+              const currentRideRequestId = localStorage.getItem('currentRideRequestId');
+              if (currentRideRequestId === ride.id) {
+                localStorage.removeItem('currentRideRequestId');
+                localStorage.removeItem('currentRideRequest');
+              }
+            } catch (error) {
+              console.warn('Warning: Failed to cleanup expired ride data:', error);
+            }
+            
+            return false;
+          }
+          
+          // Update time remaining for display
+          ride.timeRemaining = timeRemaining;
+          return true;
+        });
+        return validRides.length !== prev.length ? validRides : prev;
+      });
+    }, 1000); // Check every second for real-time countdown
+
+    // Clean up intervals on component unmount
+    return () => {
+      clearInterval(refreshInterval);
+      clearInterval(cleanupInterval);
+    };
   }, [driver.uid, driver.id, navigate]);
 
   const startBidding = (rideId) => {
@@ -413,8 +443,8 @@ const DriverDashboard = ({ driverData }) => {
 
   return (
     <div className="driver-dashboard">
-      {/* Real-time bid notification */}
-      <DriverBidNotification
+      {/* Real-time bid notification (enhanced to avoid duplicate/old OTP popups) */}
+      <EnhancedOTPNotification
         driverData={driver}
         onRideConfirmed={handleRideConfirmed}
       />
@@ -465,10 +495,11 @@ const DriverDashboard = ({ driverData }) => {
                   </div>
                   
                   <div className="ride-metadata">
-                    <div className="time-remaining">
+                  <div className={`time-remaining ${ride.timeRemaining <= 0 ? 'expired' : ride.timeRemaining <= 10 ? 'warning' : ''}`}>
                       <span className="icon">⏱️</span>
                       <span className="time">
-                        {Math.floor(ride.timeRemaining / 60)}:{(ride.timeRemaining % 60).toString().padStart(2, '0')} left
+                        {ride.timeRemaining <= 0 ? 'EXPIRED' : 
+                         `${Math.floor(ride.timeRemaining / 60)}:${(ride.timeRemaining % 60).toString().padStart(2, '0')} left`}
                       </span>
                     </div>
                     

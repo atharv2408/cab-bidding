@@ -13,8 +13,11 @@ function Confirm({ appState }) {
   useEffect(() => {
     const fetchDriverDetails = async () => {
       if (selectedBid) {
+        // Only generate OTP if one doesn't exist
         if (!rideOTP) {
-          setRideOTP(('0000' + Math.floor(Math.random() * 10000)).slice(-4));
+          const newOTP = ('0000' + Math.floor(Math.random() * 10000)).slice(-4);
+          setRideOTP(newOTP);
+          console.log('🔐 Generated new OTP for ride:', newOTP);
         }
 
         try {
@@ -38,7 +41,7 @@ function Confirm({ appState }) {
     };
 
     fetchDriverDetails();
-  }, [selectedBid, rideOTP, setRideOTP]);
+  }, [selectedBid, setRideOTP]); // Removed rideOTP to prevent duplicate generation
 
   const handleConfirm = async () => {
     if (!selectedBid) {
@@ -51,57 +54,78 @@ function Confirm({ appState }) {
     
     // Get user data
     const user = JSON.parse(localStorage.getItem('customerData') || localStorage.getItem('user') || '{}');
-    const booking = {
-      userId: user?.uid || user?.id || 'demo-user-123',
-      customerName: user?.name || user?.full_name || 'Demo User',
-      customerPhone: user?.phone || '+91 0000000000',
-      driverId: selectedBid.driver_id,
-      driverName: selectedBid.driver,
-      pickup: pickup.address,
-      drop: drop.address,
-      price: selectedBid.price,
-      distance: selectedBid.distance,
-      eta: selectedBid.eta,
-      otp: rideOTP,
-      bookingId: bookingId,
-      car: selectedBid.car,
-      driverPhone: driverDetails?.phone || 'Contact via app',
-      estimatedArrival: estimatedArrival
+    
+    // Prepare booking data for Supabase
+    const bookingData = {
+      id: bookingId,
+      customer_name: user?.name || user?.full_name || 'Demo User',
+      customer_phone: user?.phone || user?.phoneNumber || '+91 0000000000',
+      pickup_location: {
+        lat: pickup.coords?.[0] || 0,
+        lng: pickup.coords?.[1] || 0
+      },
+      drop_location: {
+        lat: drop.coords?.[0] || 0,
+        lng: drop.coords?.[1] || 0
+      },
+      pickup_address: pickup.address,
+      drop_address: drop.address,
+      distance: parseFloat(selectedBid.distance) || 0,
+      estimated_fare: parseFloat(selectedBid.price) || 0,
+      status: 'confirmed',
+      selected_driver_id: selectedBid.driver_id,
+      payment_method: 'cash',
+      special_requests: ''
     };
 
     try {
       let bookingSaved = false;
       
-      // Try to save to database first
+      // Try to save to Supabase database first
       try {
-        const savedBooking = await database.saveBooking(booking);
-        console.log('✅ Booking saved to database:', savedBooking);
-        bookingSaved = true;
-      } catch (dbError) {
-        console.log('⚠️ Database unavailable, using fallback booking save...');
+        const response = await fetch('http://localhost:3001/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('customerToken') || localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify(bookingData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Booking saved to Supabase:', result);
+          bookingSaved = true;
+        } else {
+          throw new Error('API request failed');
+        }
+      } catch (apiError) {
+        console.log('⚠️ Supabase API unavailable, using fallback booking save...');
         
         // Fallback: Store booking locally
         const fallbackBooking = {
-          ...booking,
+          ...bookingData,
           id: bookingId,
           status: 'confirmed',
           created_at: new Date().toISOString(),
-          customerName: booking.customerName,
-          customerPhone: booking.customerPhone,
-          pickup: booking.pickup,
-          drop: booking.drop,
-          final_fare: booking.price,
-          selected_driver_id: booking.driverId
+          driverName: selectedBid.driver,
+          price: selectedBid.price,
+          distance: selectedBid.distance,
+          eta: selectedBid.eta,
+          otp: rideOTP,
+          car: selectedBid.car,
+          driverPhone: driverDetails?.phone || 'Contact via app',
+          estimatedArrival: estimatedArrival
         };
         
         localStorage.setItem('confirmedBooking', JSON.stringify(fallbackBooking));
         localStorage.setItem(`confirmed_${bookingId}`, JSON.stringify(fallbackBooking));
         // Store OTP in multiple locations for driver access
-        localStorage.setItem('currentRideOTP', booking.otp);
-        localStorage.setItem('rideOTP', booking.otp);
-        localStorage.setItem(`otp_${bookingId}`, booking.otp);
+        localStorage.setItem('currentRideOTP', rideOTP);
+        localStorage.setItem('rideOTP', rideOTP);
+        localStorage.setItem(`otp_${bookingId}`, rideOTP);
         
-        console.log('🔐 Customer OTP stored for driver verification:', booking.otp);
+        console.log('🔐 Customer OTP stored for driver verification:', rideOTP);
         
         console.log('✅ Booking saved in fallback mode:', bookingId);
         bookingSaved = true;

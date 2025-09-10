@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import '../components/Modal.css';
 
 const ActiveRides = ({ appState }) => {
-  const { activeRides, setActiveRides, driver } = appState;
+  const { activeRides, setActiveRides, driver, socket } = appState;
 
   // Mock active rides for demo
   const [rides, setRides] = useState([
@@ -26,11 +28,23 @@ const ActiveRides = ({ appState }) => {
       fare: 32.50,
       status: 'en_route_to_pickup',
       startTime: Date.now() - 300000, // 5 minutes ago
-      otp: '4785'
+      otp: '4785',
+      bookingId: 'booking_123',
+      customerId: 'customer_456'
     }
-  ]);
+  ].filter(ride => {
+    // Filter out completed rides
+    return !localStorage.getItem(`ride_completed_${ride.id}`) && 
+           !localStorage.getItem(`ride_completed_${ride.bookingId}`);
+  }));
 
   const [rideTimers, setRideTimers] = useState({});
+  const [otpVerificationModal, setOtpVerificationModal] = useState(null);
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [cancellationModal, setCancellationModal] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -66,11 +80,191 @@ const ActiveRides = ({ appState }) => {
     ));
   };
 
-  const handleCompleteRide = (rideId) => {
-    // Mark ride as completed
-    setRides(prev => prev.filter(ride => ride.id !== rideId));
-    // In a real app, this would update the backend and earnings
-    alert('Ride completed! Payment received.');
+  // Verify OTP before allowing ride completion
+  const handleOtpVerification = (ride) => {
+    setOtpVerificationModal(ride);
+    setEnteredOtp('');
+    setError('');
+  };
+
+  // Verify OTP and proceed with ride completion
+  const verifyOtpAndComplete = async () => {
+    if (!otpVerificationModal || !enteredOtp) {
+      setError('Please enter the OTP');
+      return;
+    }
+
+    const ride = otpVerificationModal;
+    if (enteredOtp !== ride.otp) {
+      setError('Invalid OTP. Please check with the customer.');
+      return;
+    }
+
+    setError('');
+    setOtpVerificationModal(null);
+    
+    // Show ride completion options
+    handleRideCompletion(ride);
+  };
+
+  // Show ride completion options (Complete or Cancel)
+  const handleRideCompletion = (ride) => {
+    const confirmCompletion = window.confirm(
+      `Ride verification successful!\n\nCustomer: ${ride.customer.name}\nFare: $${ride.fare}\n\nDo you want to COMPLETE this ride?\n\nClick OK to Complete or Cancel to report an issue.`
+    );
+    
+    if (confirmCompletion) {
+      completeRide(ride);
+    } else {
+      setCancellationModal(ride);
+      setCancellationReason('');
+    }
+  };
+
+  // Complete the ride and update history
+  const completeRide = async (ride) => {
+    setLoading(true);
+    try {
+      // Update ride status in database
+      const rideCompletionData = {
+        bookingId: ride.bookingId,
+        driverId: driver.id,
+        customerId: ride.customerId,
+        finalFare: ride.fare,
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        paymentStatus: 'paid'
+      };
+
+      // Call API to complete ride
+      const response = await axios.post(
+        'http://localhost:3001/api/ride/complete',
+        rideCompletionData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('driverToken')}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Immediately remove from active rides to prevent re-appearance
+        setRides(prev => prev.filter(r => r.id !== ride.id));
+        
+        // Update driver earnings
+        const earnings = localStorage.getItem('driverEarnings') || '0';
+        const newEarnings = parseFloat(earnings) + ride.fare;
+        localStorage.setItem('driverEarnings', newEarnings.toString());
+        
+        // Save completed ride to history
+        const completedRideRecord = {
+          id: ride.id,
+          bookingId: ride.bookingId,
+          customerId: ride.customerId,
+          customerName: ride.customer.name,
+          customerPhone: ride.customer.phone,
+          pickup: ride.pickup.address,
+          drop: ride.drop.address,
+          distance: ride.distance,
+          fare: ride.fare,
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+          paymentStatus: 'paid'
+        };
+        
+        // Save to localStorage for history
+        const existingHistory = JSON.parse(localStorage.getItem('driverRideHistory') || '[]');
+        existingHistory.unshift(completedRideRecord);
+        localStorage.setItem('driverRideHistory', JSON.stringify(existingHistory));
+        
+        // Mark ride as permanently completed
+        localStorage.setItem(`ride_completed_${ride.id}`, 'true');
+        localStorage.setItem(`ride_completed_${ride.bookingId}`, 'true');
+        
+        // Show success message
+        alert(`🎉 Ride Completed Successfully!\n\nEarnings: $${ride.fare}\nTotal Earnings: $${newEarnings.toFixed(2)}\n\nPayment has been processed automatically.`);
+        
+        // Emit socket event for real-time updates to customer
+        if (socket) {
+          socket.emit('rideCompleted', {
+            rideId: ride.id,
+            bookingId: ride.bookingId,
+            driverId: driver.id,
+            customerId: ride.customerId,
+            fare: ride.fare,
+            completedAt: completedRideRecord.completedAt,
+            customerName: ride.customer.name
+          });
+        }
+      } else {
+        setError(response.data.message || 'Failed to complete ride');
+      }
+    } catch (error) {
+      console.error('Error completing ride:', error);
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel ride with reason
+  const cancelRideWithReason = async () => {
+    if (!cancellationModal || !cancellationReason.trim()) {
+      setError('Please provide a cancellation reason');
+      return;
+    }
+
+    const ride = cancellationModal;
+    setLoading(true);
+    
+    try {
+      const cancellationData = {
+        bookingId: ride.bookingId,
+        driverId: driver.id,
+        customerId: ride.customerId,
+        reason: cancellationReason,
+        status: 'cancelled',
+        cancelledAt: new Date().toISOString(),
+        cancelledBy: 'driver'
+      };
+
+      const response = await axios.post(
+        'http://localhost:3001/api/ride/cancel',
+        cancellationData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('driverToken')}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Remove from active rides
+        setRides(prev => prev.filter(r => r.id !== ride.id));
+        
+        setCancellationModal(null);
+        setCancellationReason('');
+        
+        alert(`Ride cancelled successfully.\nReason: ${cancellationReason}\n\nCustomer has been notified.`);
+        
+        // Emit socket event
+        if (socket) {
+          socket.emit('rideCancelled', {
+            rideId: ride.id,
+            driverId: driver.id,
+            customerId: ride.customerId,
+            reason: cancellationReason
+          });
+        }
+      } else {
+        setError(response.data.message || 'Failed to cancel ride');
+      }
+    } catch (error) {
+      console.error('Error cancelling ride:', error);
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getStatusInfo = (status) => {
@@ -252,9 +446,9 @@ const ActiveRides = ({ appState }) => {
                   {ride.status === 'en_route_to_destination' && (
                     <button 
                       className="action-btn complete-btn"
-                      onClick={() => handleCompleteRide(ride.id)}
+                      onClick={() => handleOtpVerification(ride)}
                     >
-                      ✅ Complete Ride
+                      🔐 Verify OTP & Complete
                     </button>
                   )}
                 </div>
@@ -313,6 +507,136 @@ const ActiveRides = ({ appState }) => {
           </button>
         </div>
       </div>
+
+      {/* OTP Verification Modal */}
+      {otpVerificationModal && (
+        <div className="modal-overlay" onClick={() => setOtpVerificationModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>🔐 Verify Customer OTP</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setOtpVerificationModal(null)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="customer-info">
+                <p><strong>Customer:</strong> {otpVerificationModal.customer.name}</p>
+                <p><strong>Phone:</strong> {otpVerificationModal.customer.phone}</p>
+                <p><strong>Fare:</strong> ${otpVerificationModal.fare}</p>
+              </div>
+              
+              <div className="otp-input-section">
+                <label htmlFor="otpInput">Enter 6-digit OTP from customer:</label>
+                <input
+                  type="text"
+                  id="otpInput"
+                  value={enteredOtp}
+                  onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  className="otp-input"
+                  maxLength={6}
+                />
+                <p className="otp-hint">Customer's OTP: {otpVerificationModal.otp} (for demo)</p>
+              </div>
+              
+              {error && (
+                <div className="error-message">
+                  <span className="error-icon">⚠️</span>
+                  {error}
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setOtpVerificationModal(null)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary"
+                onClick={verifyOtpAndComplete}
+                disabled={loading || enteredOtp.length !== 6}
+              >
+                {loading ? '🔄 Verifying...' : '✅ Verify & Proceed'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Modal */}
+      {cancellationModal && (
+        <div className="modal-overlay" onClick={() => setCancellationModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>⚠️ Cancel Ride</h3>
+              <button 
+                className="close-btn"
+                onClick={() => setCancellationModal(null)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="customer-info">
+                <p><strong>Customer:</strong> {cancellationModal.customer.name}</p>
+                <p><strong>Phone:</strong> {cancellationModal.customer.phone}</p>
+              </div>
+              
+              <div className="cancellation-reason-section">
+                <label htmlFor="cancellationReason">Reason for cancellation:</label>
+                <select
+                  id="cancellationReason"
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  className="cancellation-select"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Customer not found at pickup">Customer not found at pickup</option>
+                  <option value="Customer cancelled">Customer cancelled</option>
+                  <option value="Vehicle breakdown">Vehicle breakdown</option>
+                  <option value="Emergency situation">Emergency situation</option>
+                  <option value="Customer was intoxicated">Customer was intoxicated</option>
+                  <option value="Unsafe pickup location">Unsafe pickup location</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              
+              {error && (
+                <div className="error-message">
+                  <span className="error-icon">⚠️</span>
+                  {error}
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setCancellationModal(null)}
+                disabled={loading}
+              >
+                Back
+              </button>
+              <button 
+                className="btn btn-danger"
+                onClick={cancelRideWithReason}
+                disabled={loading || !cancellationReason}
+              >
+                {loading ? '🔄 Cancelling...' : '⚠️ Confirm Cancellation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

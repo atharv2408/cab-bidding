@@ -1,42 +1,44 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const History = ({ appState }) => {
   const { driver } = appState;
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await axios.get('http://localhost:3001/api/driver/history', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('driverToken')}`
+          }
+        });
+        if (res.data.success) {
+          setHistory(res.data.history);
+        } else {
+          setError(res.data.message || 'Failed to load history');
+        }
+      } catch (err) {
+        setError('Network error loading history');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, []);
   
-  // Mock ride history data
-  const rideHistory = [
-    {
-      id: 'ride_h1',
-      date: '2024-01-07',
-      customer: 'Sarah Johnson',
-      pickup: 'Downtown Mall',
-      drop: 'Airport Terminal',
-      fare: 25.50,
-      rating: 5,
-      status: 'completed'
-    },
-    {
-      id: 'ride_h2',
-      date: '2024-01-07',
-      customer: 'Mike Chen',
-      pickup: 'University Campus',
-      drop: 'Business District',
-      fare: 18.75,
-      rating: 4,
-      status: 'completed'
-    },
-    {
-      id: 'ride_h3',
-      date: '2024-01-06',
-      customer: 'Emma Wilson',
-      pickup: 'Hotel Grand',
-      drop: 'Shopping Center',
-      fare: 22.00,
-      rating: 5,
-      status: 'completed'
-    }
-  ];
-  
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <p>Loading history...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -48,24 +50,31 @@ const History = ({ appState }) => {
         </div>
       </div>
 
+      {error && (
+        <div className="error-message" style={{ marginBottom: 16 }}>
+          <span className="error-icon">⚠️</span>
+          {error}
+        </div>
+      )}
+
       <div className="rides-section">
-        {rideHistory.map(ride => (
+        {history.map(ride => (
           <div key={ride.id} className="ride-card">
             <div className="ride-header">
               <div className="ride-customer">
                 <div className="customer-avatar">
-                  {ride.customer.charAt(0)}
+                  {ride.customer?.name?.charAt(0) || '?'}
                 </div>
                 <div className="customer-info">
-                  <h4>{ride.customer}</h4>
+                  <h4>{ride.customer?.name || 'Customer'}</h4>
                   <div className="customer-rating">
-                    <span>⭐ {ride.rating}</span>
-                    <span>{ride.date}</span>
+                    <span>⭐ {ride.customerRating || ride.customer?.rating || '-'}</span>
+                    <span>{new Date(ride.date || ride.completedAt || Date.now()).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
               <div className="ride-price">
-                <h3 className="price-value">${ride.fare}</h3>
+                <h3 className="price-value">${ride.fare?.toFixed ? ride.fare.toFixed(2) : ride.fare}</h3>
               </div>
             </div>
 

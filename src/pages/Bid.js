@@ -164,6 +164,35 @@ function Bid({ appState }) {
     }
   }, [bids.length]);
 
+  // Cleanup function after bid acceptance
+  const cleanupAfterBidAcceptance = async (rideRequestId) => {
+    try {
+      console.log('🗡️ Cleaning up after bid acceptance...');
+      
+      // Remove the ride request from active bidding lists
+      localStorage.removeItem(`bids_${rideRequestId}`);
+      localStorage.removeItem(`ride_request_${rideRequestId}`);
+      
+      // Clean up fallback bids for this specific ride
+      const fallbackBids = JSON.parse(localStorage.getItem('fallbackBids') || '[]');
+      const cleanedFallbackBids = fallbackBids.filter(bid => bid.booking_id !== rideRequestId);
+      localStorage.setItem('fallbackBids', JSON.stringify(cleanedFallbackBids));
+      
+      // Mark this ride as no longer accepting bids
+      localStorage.setItem(`ride_${rideRequestId}_status`, 'confirmed');
+      
+      // Clear the current ride request ID since it's now confirmed
+      if (localStorage.getItem('currentRideRequestId') === rideRequestId) {
+        localStorage.removeItem('currentRideRequestId');
+      }
+      
+      console.log('✅ Cleanup completed - ride no longer in bidding phase');
+      
+    } catch (error) {
+      console.error('Error during bid acceptance cleanup:', error);
+    }
+  };
+
   const acceptBid = async (bid) => {
     try {
       // Get the current ride request ID
@@ -258,6 +287,9 @@ function Bid({ appState }) {
         setSelectedBid(bid);
         setBiddingActive(false);
         setSelectionTime(false);
+        
+        // Clean up bid-related data
+        await cleanupAfterBidAcceptance(rideRequestId);
         
         console.log('🚗 Ride confirmed with driver:', bid.driver);
         

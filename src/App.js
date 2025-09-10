@@ -15,6 +15,7 @@ import Bid from './pages/Bid';
 import Confirm from './pages/Confirm';
 import Success from './pages/Success';
 import History from './pages/History';
+import RideStatusMonitor from './components/RideStatusMonitor';
 // Driver App
 import DriverApp from './DriverApp';
 
@@ -351,6 +352,9 @@ function CustomerApp() {
             theme={theme}
             setTheme={setTheme}
           />
+          
+          {/* Add Ride Status Monitor for real-time completion updates */}
+          <RideStatusMonitor appState={appState} />
           
           <main className="main-content">
             <Routes>

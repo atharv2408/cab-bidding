@@ -16,19 +16,55 @@ function History({ appState }) {
   const loadBookingHistory = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || localStorage.getItem('customerData') || '{}');
+      const token = localStorage.getItem('customerToken') || localStorage.getItem('authToken');
       const userId = user?.id || user?.uid || 'demo-user-123';
       
       let allBookings = [];
       
-      // Try to load from database first
-      try {
-        const userBookings = await database.getUserBookingHistory(userId);
-        if (userBookings && userBookings.length > 0) {
-          allBookings = userBookings;
-          console.log('✅ Found database booking history:', allBookings.length);
+      // Try to load from backend API first
+      if (token) {
+        try {
+          const response = await fetch('http://localhost:3001/api/customer/history', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.history) {
+              allBookings = data.history;
+              console.log('✅ Found backend API booking history:', allBookings.length);
+              
+              // Update stats from API data
+              setStats({
+                totalBookings: data.totalBookings || allBookings.length,
+                completedRides: data.completedRides || allBookings.filter(b => b.status === 'completed').length,
+                cancelledRides: allBookings.filter(b => b.status === 'cancelled').length,
+                totalSpent: data.totalSpent || 0,
+                averageRating: 4.8
+              });
+            }
+          } else {
+            console.log('⚠️ API unavailable, falling back to local storage...');
+          }
+        } catch (apiError) {
+          console.log('⚠️ API error:', apiError.message, ', checking localStorage...');
         }
-      } catch (dbError) {
-        console.log('⚠️ Database unavailable, checking localStorage...');
+      }
+      
+      // Fallback: Try to load from database
+      if (allBookings.length === 0) {
+        try {
+          const userBookings = await database.getUserBookingHistory(userId);
+          if (userBookings && userBookings.length > 0) {
+            allBookings = userBookings;
+            console.log('✅ Found database booking history:', allBookings.length);
+          }
+        } catch (dbError) {
+          console.log('⚠️ Database unavailable, checking localStorage...');
+        }
       }
       
       // Fallback: Load from localStorage
