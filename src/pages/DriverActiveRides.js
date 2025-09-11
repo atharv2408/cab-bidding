@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { supabaseDB } from '../utils/supabaseService';
+import '../styles/DriverStyles.css';
+
+// Fix Leaflet default markers
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
 const DriverActiveRides = ({ driverData }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [activeRides, setActiveRides] = useState([]);
-  const [otpInput, setOtpInput] = useState({});
-  const [otpError, setOtpError] = useState({});
-  const [startingRide, setStartingRide] = useState({});
+  const [completionStatus, setCompletionStatus] = useState(null);
   
   // Get driver data from localStorage if not passed as prop
   const driver = driverData || JSON.parse(localStorage.getItem('driverData') || '{}');
@@ -46,7 +56,8 @@ const DriverActiveRides = ({ driverData }) => {
           
           if (driverRides.length > 0) {
             console.log('✅ Found database active rides:', driverRides.length);
-            rides = driverRides;
+            // Only take the first ride to show single ride
+            rides = [driverRides[0]];
             ridesFound = true;
           }
         }
@@ -97,9 +108,10 @@ const DriverActiveRides = ({ driverData }) => {
         }
         
         if (fallbackRides.length > 0) {
-          rides = fallbackRides;
+          // Only show the first ride to ensure single active ride
+          rides = [fallbackRides[0]];
           ridesFound = true;
-          console.log('✅ Found fallback active rides:', fallbackRides.length);
+          console.log('✅ Found fallback active rides: 1 (showing single ride)');
         }
       }
       
@@ -113,91 +125,10 @@ const DriverActiveRides = ({ driverData }) => {
     }
   };
 
-  const handleOtpChange = (rideId, value) => {
-    setOtpInput(prev => ({ ...prev, [rideId]: value }));
-    // Clear error when user starts typing
-    if (otpError[rideId]) {
-      setOtpError(prev => ({ ...prev, [rideId]: '' }));
-    }
-  };
 
-  const startRide = async (ride) => {
-    const enteredOtp = otpInput[ride.id];
-    
-    if (!enteredOtp) {
-      setOtpError(prev => ({ ...prev, [ride.id]: 'Please enter the OTP' }));
-      return;
-    }
-    
-    if (enteredOtp.length !== 4) {
-      setOtpError(prev => ({ ...prev, [ride.id]: 'OTP must be 4 digits' }));
-      return;
-    }
-    
-    if (enteredOtp !== ride.otp) {
-      setOtpError(prev => ({ ...prev, [ride.id]: 'Invalid OTP. Please check with customer.' }));
-      return;
-    }
-    
-    // OTP is correct, start the ride
-    setStartingRide(prev => ({ ...prev, [ride.id]: true }));
-    
-    try {
-      let rideStarted = false;
-      
-      // Try to update in database first
-      try {
-        const { data, error } = await supabaseDB.bookings.update(ride.id, {
-          status: 'in_progress',
-          started_at: new Date().toISOString()
-        });
-        
-        if (error) {
-          throw new Error('Database not available');
-        }
-        
-        rideStarted = true;
-        console.log('✅ Ride started in database');
-      } catch (dbError) {
-        console.log('⚠️ Database unavailable, using fallback ride start...');
-        
-        // Fallback: Update localStorage
-        const startedRide = {
-          ...ride,
-          status: 'in_progress',
-          started_at: new Date().toISOString()
-        };
-        
-        // Update the stored booking
-        localStorage.setItem('activeRide', JSON.stringify(startedRide));
-        localStorage.setItem(`ride_${ride.id}`, JSON.stringify(startedRide));
-        
-        rideStarted = true;
-        console.log('✅ Ride started in fallback mode');
-      }
-      
-      if (rideStarted) {
-        // Update the ride status locally
-        setActiveRides(prev => 
-          prev.map(r => 
-            r.id === ride.id 
-              ? { ...r, status: 'in_progress', started_at: new Date().toISOString() }
-              : r
-          )
-        );
-        
-        // Clear OTP input
-        setOtpInput(prev => ({ ...prev, [ride.id]: '' }));
-        
-        alert(`Ride started successfully! Customer: ${ride.customer_name}`);
-      }
-      
-    } catch (error) {
-      console.error('Error starting ride:', error);
-      setOtpError(prev => ({ ...prev, [ride.id]: 'Failed to start ride. Please try again.' }));
-    } finally {
-      setStartingRide(prev => ({ ...prev, [ride.id]: false }));
-    }
+  // Complete ride directly
+  const handleCompleteRide = (ride) => {
+    completeRide(ride);
   };
 
   const completeRide = async (ride) => {
@@ -290,11 +221,20 @@ const DriverActiveRides = ({ driverData }) => {
         // Remove from active rides
         setActiveRides(prev => prev.filter(r => r.id !== ride.id));
         
-        // Show success message with ride details
+        // Show completion status modal instead of alert
         const fareAmount = ride.final_fare || ride.estimated_fare || 0;
         const customerName = ride.customer_name || 'Customer';
         
-        alert(`✅ Ride Completed Successfully!\n\nCustomer: ${customerName}\nEarnings: ₹${fareAmount}\n\nRide has been saved to your history.`);
+        setCompletionStatus({
+          message: 'Ride Completed!',
+          earnings: fareAmount,
+          customer: customerName
+        });
+        
+        // Clear completion status after 3 seconds
+        setTimeout(() => {
+          setCompletionStatus(null);
+        }, 3000);
         
         console.log('🎉 Ride completed and saved to both customer and driver history');
       }
@@ -416,39 +356,15 @@ const DriverActiveRides = ({ driverData }) => {
                 
                 <div className="ride-actions">
                   {ride.status === 'confirmed' ? (
-                    <div className="start-ride-section">
-                      <div className="otp-verification">
-                        <h4>🔐 Enter Customer's OTP to Start Ride</h4>
-                        <p className="otp-instruction">Ask the customer for their 4-digit OTP before starting</p>
-                        
-                        <div className="otp-input-group">
-                          <input
-                            type="text"
-                            placeholder="Enter 4-digit OTP"
-                            value={otpInput[ride.id] || ''}
-                            onChange={(e) => handleOtpChange(ride.id, e.target.value)}
-                            maxLength={4}
-                            pattern="[0-9]{4}"
-                            className={`otp-input ${otpError[ride.id] ? 'error' : ''}`}
-                          />
-                          <button 
-                            className="start-ride-btn" 
-                            onClick={() => startRide(ride)}
-                            disabled={startingRide[ride.id] || !otpInput[ride.id] || otpInput[ride.id].length !== 4}
-                          >
-                            {startingRide[ride.id] ? (
-                              <>⟳ Starting...</>
-                            ) : (
-                              <>🚗 Start Ride</>
-                            )}
-                          </button>
-                        </div>
-                        
-                        {otpError[ride.id] && (
-                          <div className="otp-error">
-                            ⚠️ {otpError[ride.id]}
-                          </div>
-                        )}
+                    <div className="assigned-ride-actions">
+                      <h4>🎡 Ride Assigned - Ready to Go!</h4>
+                      <div className="action-buttons">
+                        <button 
+                          className="complete-ride-btn" 
+                          onClick={() => handleCompleteRide(ride)}
+                        >
+                          ✅ Complete Ride
+                        </button>
                       </div>
                     </div>
                   ) : ride.status === 'in_progress' ? (
@@ -460,15 +376,8 @@ const DriverActiveRides = ({ driverData }) => {
                       
                       <div className="progress-actions">
                         <button 
-                          className="navigate-btn"
-                          onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ride.drop_address)}`, '_blank')}
-                        >
-                          🗺️ Navigate
-                        </button>
-                        
-                        <button 
                           className="complete-ride-btn" 
-                          onClick={() => completeRide(ride)}
+                          onClick={() => handleCompleteRide(ride)}
                         >
                           ✅ Complete Ride
                         </button>
@@ -494,6 +403,24 @@ const DriverActiveRides = ({ driverData }) => {
           ← Back to Dashboard
         </button>
       </div>
+
+      {/* Completion Status Modal */}
+      {completionStatus && (
+        <div className="modal-overlay">
+          <div className="modal-content completion-modal">
+            <div className="completion-message">
+              <div className="success-icon">🎉</div>
+              <h3>{completionStatus.message}</h3>
+              <div className="earnings-display">
+                <span className="earnings-label">Earnings:</span>
+                <span className="earnings-amount">₹{completionStatus.earnings}</span>
+              </div>
+              <p>Customer: {completionStatus.customer}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

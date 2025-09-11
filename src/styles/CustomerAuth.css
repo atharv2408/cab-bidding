@@ -400,7 +400,7 @@
 }
 
 /* Dark theme support */
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark), .dark {
   .customer-auth-modal {
     background: #1f2937;
     color: #f9fafb;
@@ -429,6 +429,87 @@
     background: #374151;
     border-color: #4b5563;
   }
+}
+
+/* Explicit dark mode styles for body.dark */
+body.dark .customer-auth-modal {
+  background: #2d3748;
+  color: #e2e8f0;
+}
+
+body.dark .form-input {
+  background: #4a5568;
+  border-color: #718096;
+  color: #e2e8f0;
+}
+
+body.dark .form-input:focus {
+  background: #2d3748;
+  border-color: #63b3ed;
+}
+
+body.dark .form-input::placeholder {
+  color: #a0aec0;
+}
+
+body.dark .form-group label {
+  color: #e2e8f0;
+}
+
+body.dark .auth-footer {
+  background: #4a5568;
+  border-color: #718096;
+}
+
+body.dark .auth-footer p {
+  color: #a0aec0;
+}
+
+body.dark .checkbox-custom {
+  background: #4a5568;
+  border-color: #718096;
+}
+
+body.dark .checkbox-wrapper {
+  color: #a0aec0;
+}
+
+body.dark .toggle-mode-btn {
+  color: #63b3ed;
+}
+
+body.dark .toggle-mode-btn:hover {
+  color: #90cdf4;
+}
+
+body.dark .forgot-password-btn {
+  color: #63b3ed;
+}
+
+body.dark .forgot-password-btn:hover {
+  color: #90cdf4;
+}
+
+body.dark .password-toggle {
+  color: #a0aec0;
+}
+
+body.dark .password-toggle:hover {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+/* Light mode improvements */
+body.light .form-group label {
+  color: #1a202c;
+}
+
+body.light .checkbox-wrapper {
+  color: #4a5568;
+}
+
+body.light .auth-footer p {
+  color: #4a5568;
 }
 
 /* Loading state improvements */

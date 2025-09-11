@@ -11,3 +11,92 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Global text contrast improvements */
+* {
+  box-sizing: border-box;
+}
+
+/* Ensure minimum contrast ratios */
+body.light {
+  background-color: #f7fafc;
+  color: #1a202c;
+}
+
+body.dark {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+/* Default text colors for better contrast */
+body.light h1, body.light h2, body.light h3, body.light h4, body.light h5, body.light h6 {
+  color: #1a202c;
+}
+
+body.light p, body.light span, body.light div, body.light label {
+  color: #2d3748;
+}
+
+body.light small, body.light .text-muted {
+  color: #4a5568;
+}
+
+body.dark h1, body.dark h2, body.dark h3, body.dark h4, body.dark h5, body.dark h6 {
+  color: #f7fafc;
+}
+
+body.dark p, body.dark span, body.dark div, body.dark label {
+  color: #e2e8f0;
+}
+
+body.dark small, body.dark .text-muted {
+  color: #a0aec0;
+}
+
+/* Button text contrast */
+body.light button {
+  color: inherit;
+}
+
+body.dark button {
+  color: inherit;
+}
+
+/* Link colors */
+body.light a {
+  color: #3182ce;
+}
+
+body.light a:hover {
+  color: #2c5282;
+}
+
+body.dark a {
+  color: #63b3ed;
+}
+
+body.dark a:hover {
+  color: #90cdf4;
+}
+
+/* Form element contrast */
+body.light input, body.light textarea, body.light select {
+  color: #1a202c;
+  background-color: white;
+  border-color: #d1d5db;
+}
+
+body.dark input, body.dark textarea, body.dark select {
+  color: #e2e8f0;
+  background-color: #4a5568;
+  border-color: #718096;
+}
+
+/* Placeholder text */
+body.light ::placeholder {
+  color: #718096;
+}
+
+body.dark ::placeholder {
+  color: #a0aec0;
+}

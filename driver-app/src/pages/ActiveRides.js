@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import '../components/Modal.css';
+
+// Fix Leaflet default markers
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
 const ActiveRides = ({ appState }) => {
   const { activeRides, setActiveRides, driver, socket } = appState;
 
-  // Mock active rides for demo
-  const [rides, setRides] = useState([
-    {
+  // Single active ride for demo
+  const [rides, setRides] = useState(() => {
+    // Only show one active ride if not completed
+    const sampleRide = {
       id: 'active_ride_1',
       customer: {
         name: 'Sarah Johnson',
@@ -26,25 +38,27 @@ const ActiveRides = ({ appState }) => {
       distance: '18.5 km',
       estimatedTime: '25 min',
       fare: 32.50,
-      status: 'en_route_to_pickup',
+      status: 'assigned',
       startTime: Date.now() - 300000, // 5 minutes ago
-      otp: '4785',
       bookingId: 'booking_123',
       customerId: 'customer_456'
-    }
-  ].filter(ride => {
-    // Filter out completed rides
-    return !localStorage.getItem(`ride_completed_${ride.id}`) && 
-           !localStorage.getItem(`ride_completed_${ride.bookingId}`);
-  }));
+    };
+    
+    // Return empty array if ride is completed, otherwise return single ride
+    const isCompleted = localStorage.getItem(`ride_completed_${sampleRide.id}`) || 
+                       localStorage.getItem(`ride_completed_${sampleRide.bookingId}`);
+    
+    return isCompleted ? [] : [sampleRide];
+  });
 
   const [rideTimers, setRideTimers] = useState({});
-  const [otpVerificationModal, setOtpVerificationModal] = useState(null);
-  const [enteredOtp, setEnteredOtp] = useState('');
   const [cancellationModal, setCancellationModal] = useState(null);
   const [cancellationReason, setCancellationReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [completedRideDetails, setCompletedRideDetails] = useState(null);
+  const [showCompletionMap, setShowCompletionMap] = useState(false);
+  const [completionStatus, setCompletionStatus] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -80,45 +94,20 @@ const ActiveRides = ({ appState }) => {
     ));
   };
 
-  // Verify OTP before allowing ride completion
-  const handleOtpVerification = (ride) => {
-    setOtpVerificationModal(ride);
-    setEnteredOtp('');
-    setError('');
+  // Direct ride completion - show map then complete
+  const handleCompleteRide = async (ride) => {
+    // First show the map with starting location
+    setCompletedRideDetails(ride);
+    setShowCompletionMap(true);
   };
 
-  // Verify OTP and proceed with ride completion
-  const verifyOtpAndComplete = async () => {
-    if (!otpVerificationModal || !enteredOtp) {
-      setError('Please enter the OTP');
-      return;
-    }
-
-    const ride = otpVerificationModal;
-    if (enteredOtp !== ride.otp) {
-      setError('Invalid OTP. Please check with the customer.');
-      return;
-    }
-
-    setError('');
-    setOtpVerificationModal(null);
+  // Complete the ride from map view
+  const finalizeRideCompletion = async () => {
+    if (!completedRideDetails) return;
     
-    // Show ride completion options
-    handleRideCompletion(ride);
-  };
-
-  // Show ride completion options (Complete or Cancel)
-  const handleRideCompletion = (ride) => {
-    const confirmCompletion = window.confirm(
-      `Ride verification successful!\n\nCustomer: ${ride.customer.name}\nFare: $${ride.fare}\n\nDo you want to COMPLETE this ride?\n\nClick OK to Complete or Cancel to report an issue.`
-    );
-    
-    if (confirmCompletion) {
-      completeRide(ride);
-    } else {
-      setCancellationModal(ride);
-      setCancellationReason('');
-    }
+    const ride = completedRideDetails;
+    setShowCompletionMap(false);
+    await completeRide(ride);
   };
 
   // Complete the ride and update history
@@ -181,8 +170,17 @@ const ActiveRides = ({ appState }) => {
         localStorage.setItem(`ride_completed_${ride.id}`, 'true');
         localStorage.setItem(`ride_completed_${ride.bookingId}`, 'true');
         
-        // Show success message
-        alert(`🎉 Ride Completed Successfully!\n\nEarnings: $${ride.fare}\nTotal Earnings: $${newEarnings.toFixed(2)}\n\nPayment has been processed automatically.`);
+        // Set completion status
+        setCompletionStatus({
+          message: 'Ride Completed!',
+          earnings: ride.fare
+        });
+        
+        // Clear completion details and status after showing message
+        setTimeout(() => {
+          setCompletedRideDetails(null);
+          setCompletionStatus(null);
+        }, 3000);
         
         // Emit socket event for real-time updates to customer
         if (socket) {
@@ -269,6 +267,13 @@ const ActiveRides = ({ appState }) => {
 
   const getStatusInfo = (status) => {
     switch (status) {
+      case 'assigned':
+        return {
+          label: 'Ride Assigned',
+          icon: '🎡',
+          color: '#22c55e',
+          bgColor: '#dcfce7'
+        };
       case 'en_route_to_pickup':
         return {
           label: 'En Route to Pickup',
@@ -388,68 +393,89 @@ const ActiveRides = ({ appState }) => {
                   <div className="meta-item">
                     <span>⏱️ ~{ride.estimatedTime}</span>
                   </div>
-                  <div className="meta-item">
-                    <span>🔐 OTP: {ride.otp}</span>
-                  </div>
                 </div>
 
                 {/* Action Buttons based on Status */}
                 <div className="action-buttons">
-                  <button 
-                    className="action-btn call-btn"
-                    onClick={() => handleCall(ride.customer.phone)}
-                  >
-                    📞 Call Customer
-                  </button>
-                  
-                  <button 
-                    className="action-btn navigate-btn"
-                    onClick={() => handleNavigate(
-                      ride.status === 'en_route_to_pickup' 
-                        ? ride.pickup.coords 
-                        : ride.drop.coords
-                    )}
-                  >
-                    🗺️ Navigate
-                  </button>
+                  {ride.status === 'assigned' ? (
+                    // Only show Navigate and Complete Ride for assigned rides
+                    <>
+                      <button 
+                        className="action-btn navigate-btn"
+                        onClick={() => handleNavigate(ride.pickup.coords)}
+                      >
+                        🗺️ Navigate
+                      </button>
+                      
+                      <button 
+                        className="action-btn complete-btn"
+                        style={{ background: '#10b981' }}
+                        onClick={() => handleCompleteRide(ride)}
+                      >
+                        ✅ Complete Ride
+                      </button>
+                    </>
+                  ) : (
+                    // Other status buttons for non-assigned rides
+                    <>
+                      <button 
+                        className="action-btn call-btn"
+                        onClick={() => handleCall(ride.customer.phone)}
+                      >
+                        📞 Call Customer
+                      </button>
+                      
+                      <button 
+                        className="action-btn navigate-btn"
+                        onClick={() => handleNavigate(
+                          ride.status === 'en_route_to_pickup' 
+                            ? ride.pickup.coords 
+                            : ride.drop.coords
+                        )}
+                      >
+                        🗺️ Navigate
+                      </button>
 
-                  {ride.status === 'en_route_to_pickup' && (
-                    <button 
-                      className="action-btn"
-                      style={{ background: '#f59e0b' }}
-                      onClick={() => handleStatusUpdate(ride.id, 'arrived_at_pickup')}
-                    >
-                      📍 Arrived at Pickup
-                    </button>
-                  )}
+                      {ride.status === 'en_route_to_pickup' && (
+                        <button 
+                          className="action-btn"
+                          style={{ background: '#f59e0b' }}
+                          onClick={() => handleStatusUpdate(ride.id, 'arrived_at_pickup')}
+                        >
+                          📍 Arrived at Pickup
+                        </button>
+                      )}
 
-                  {ride.status === 'arrived_at_pickup' && (
-                    <button 
-                      className="action-btn"
-                      style={{ background: '#10b981' }}
-                      onClick={() => handleStatusUpdate(ride.id, 'passenger_on_board')}
-                    >
-                      👥 Passenger Boarded
-                    </button>
-                  )}
+                      {ride.status === 'arrived_at_pickup' && (
+                        <button 
+                          className="action-btn"
+                          style={{ background: '#10b981' }}
+                          onClick={() => handleStatusUpdate(ride.id, 'passenger_on_board')}
+                        >
+                          👥 Passenger Boarded
+                        </button>
+                      )}
 
-                  {ride.status === 'passenger_on_board' && (
-                    <button 
-                      className="action-btn"
-                      style={{ background: '#8b5cf6' }}
-                      onClick={() => handleStatusUpdate(ride.id, 'en_route_to_destination')}
-                    >
-                      🎯 Start Trip
-                    </button>
-                  )}
+                      {ride.status === 'passenger_on_board' && (
+                        <button 
+                          className="action-btn"
+                          style={{ background: '#8b5cf6' }}
+                          onClick={() => handleStatusUpdate(ride.id, 'en_route_to_destination')}
+                        >
+                          🎯 Start Trip
+                        </button>
+                      )}
 
-                  {ride.status === 'en_route_to_destination' && (
-                    <button 
-                      className="action-btn complete-btn"
-                      onClick={() => handleOtpVerification(ride)}
-                    >
-                      🔐 Verify OTP & Complete
-                    </button>
+                      {ride.status === 'en_route_to_destination' && (
+                        <button 
+                          className="action-btn complete-btn"
+                          style={{ background: '#10b981' }}
+                          onClick={() => handleCompleteRide(ride)}
+                        >
+                          ✅ Complete Ride
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -508,63 +534,53 @@ const ActiveRides = ({ appState }) => {
         </div>
       </div>
 
-      {/* OTP Verification Modal */}
-      {otpVerificationModal && (
-        <div className="modal-overlay" onClick={() => setOtpVerificationModal(null)}>
+      {/* Completion Map Modal */}
+      {showCompletionMap && completedRideDetails && (
+        <div className="modal-overlay" onClick={() => setShowCompletionMap(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>🔐 Verify Customer OTP</h3>
+              <h3>🗺️ Starting Location</h3>
               <button 
                 className="close-btn"
-                onClick={() => setOtpVerificationModal(null)}
+                onClick={() => setShowCompletionMap(false)}
               >
                 ×
               </button>
             </div>
             
             <div className="modal-body">
-              <div className="customer-info">
-                <p><strong>Customer:</strong> {otpVerificationModal.customer.name}</p>
-                <p><strong>Phone:</strong> {otpVerificationModal.customer.phone}</p>
-                <p><strong>Fare:</strong> ${otpVerificationModal.fare}</p>
-              </div>
+              <p><strong>Customer:</strong> {completedRideDetails.customer.name}</p>
+              <p><strong>Pickup:</strong> {completedRideDetails.pickup.address}</p>
+              <p><strong>Fare:</strong> ${completedRideDetails.fare}</p>
               
-              <div className="otp-input-section">
-                <label htmlFor="otpInput">Enter 6-digit OTP from customer:</label>
-                <input
-                  type="text"
-                  id="otpInput"
-                  value={enteredOtp}
-                  onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  className="otp-input"
-                  maxLength={6}
-                />
-                <p className="otp-hint">Customer's OTP: {otpVerificationModal.otp} (for demo)</p>
+              <div style={{ height: '300px', width: '100%', marginTop: '10px' }}>
+                <MapContainer
+                  center={completedRideDetails.pickup.coords}
+                  zoom={13}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <Marker position={completedRideDetails.pickup.coords}>
+                    <Popup>Pickup Location: {completedRideDetails.pickup.address}</Popup>
+                  </Marker>
+                </MapContainer>
               </div>
-              
-              {error && (
-                <div className="error-message">
-                  <span className="error-icon">⚠️</span>
-                  {error}
-                </div>
-              )}
             </div>
             
             <div className="modal-actions">
               <button 
                 className="btn btn-secondary"
-                onClick={() => setOtpVerificationModal(null)}
+                onClick={() => setShowCompletionMap(false)}
                 disabled={loading}
               >
-                Cancel
+                Back
               </button>
               <button 
                 className="btn btn-primary"
-                onClick={verifyOtpAndComplete}
-                disabled={loading || enteredOtp.length !== 6}
+                onClick={finalizeRideCompletion}
+                disabled={loading}
               >
-                {loading ? '🔄 Verifying...' : '✅ Verify & Proceed'}
+                {loading ? '🔄 Completing...' : '✅ Complete Ride'}
               </button>
             </div>
           </div>
@@ -633,6 +649,22 @@ const ActiveRides = ({ appState }) => {
               >
                 {loading ? '🔄 Cancelling...' : '⚠️ Confirm Cancellation'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Completion Status Modal */}
+      {completionStatus && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ textAlign: 'center', padding: '40px' }}>
+            <div style={{ fontSize: '60px', marginBottom: '20px' }}>🎉</div>
+            <h2 style={{ color: '#10b981', marginBottom: '10px' }}>{completionStatus.message}</h2>
+            <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }}>
+              Money Earned: ${completionStatus.earnings}
+            </p>
+            <div style={{ marginTop: '20px', fontSize: '16px', color: '#6b7280' }}>
+              Ride has been removed from assigned section
             </div>
           </div>
         </div>

@@ -1,0 +1,619 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Additional styles for driver-specific components */
+.period-selector {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .period-selector {
+  background: #2a2a2a;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.period-btn {
+  padding: 10px 20px;
+  border: 2px solid #e5e7eb;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #6b7280;
+  transition: all 0.3s ease;
+}
+
+.period-btn.active {
+  background: #ff6b35;
+  border-color: #ff6b35;
+  color: white;
+}
+
+.period-btn:hover {
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+
+body.dark .period-btn {
+  border-color: #4b5563;
+  color: #9ca3af;
+}
+
+body.dark .period-btn:hover {
+  border-color: #ff6b35;
+  color: #ff6b35;
+}
+
+.breakdown-chart {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 200px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+body.dark .breakdown-chart {
+  background: #374151;
+}
+
+.chart-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 80px;
+}
+
+.chart-bar-container {
+  height: 120px;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.chart-bar {
+  width: 100%;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+}
+
+.chart-label {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.chart-day {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #374151;
+  margin-bottom: 2px;
+}
+
+body.dark .chart-day {
+  color: #f9fafb;
+}
+
+.chart-earnings {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #ff6b35;
+  margin-bottom: 2px;
+}
+
+.chart-rides {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+body.dark .chart-rides {
+  color: #9ca3af;
+}
+
+.earnings-ride-card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .earnings-ride-card {
+  background: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ride-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.customer-details h4 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+body.dark .customer-details h4 {
+  color: #f9fafb;
+}
+
+.customer-details p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+body.dark .customer-details p {
+  color: #9ca3af;
+}
+
+.payment-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.payment-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .payment-card {
+  background: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.payment-icon {
+  font-size: 2rem;
+}
+
+.payment-info h4 {
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+  color: #1f2937;
+}
+
+body.dark .payment-info h4 {
+  color: #f9fafb;
+}
+
+.payment-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+body.dark .payment-info p {
+  color: #9ca3af;
+}
+
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.goal-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .goal-card {
+  background: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.goal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.goal-icon {
+  font-size: 1.5rem;
+}
+
+.goal-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1f2937;
+}
+
+body.dark .goal-header h4 {
+  color: #f9fafb;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+body.dark .progress-bar {
+  background: #4b5563;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+body.dark .progress-text {
+  color: #9ca3af;
+}
+
+.current-bids {
+  margin: 15px 0;
+  padding: 15px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  border: 1px solid #bae6fd;
+}
+
+body.dark .current-bids {
+  background: #1e3a8a;
+  border-color: #3b82f6;
+}
+
+.current-bids h5 {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+body.dark .current-bids h5 {
+  color: #dbeafe;
+}
+
+.bids-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bid-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+body.dark .bid-item {
+  background: #374151;
+}
+
+.bid-item.user-bid {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+}
+
+body.dark .bid-item.user-bid {
+  background: #064e3b;
+  border-color: #059669;
+}
+
+.bid-item.lowest-bid {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+}
+
+body.dark .bid-item.lowest-bid {
+  background: #451a03;
+  border-color: #f59e0b;
+}
+
+.bid-driver {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.lowest-badge {
+  background: #f59e0b;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+}
+
+.bid-amount {
+  font-weight: 700;
+  color: #059669;
+}
+
+.bid-rating {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+body.dark .bid-rating {
+  color: #9ca3af;
+}
+
+.bid-placed {
+  text-align: center;
+  padding: 15px;
+}
+
+.bid-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 8px;
+}
+
+.bid-expired {
+  text-align: center;
+  padding: 15px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.tip-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .tip-card {
+  background: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tip-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.tip-card h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  color: #1f2937;
+}
+
+body.dark .tip-card h4 {
+  color: #f9fafb;
+}
+
+.tip-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+body.dark .tip-card p {
+  color: #9ca3af;
+}
+
+.emergency-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e5e7eb;
+}
+
+body.dark .emergency-actions {
+  border-top-color: #4b5563;
+}
+
+.emergency-btn, .support-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.emergency-btn {
+  background: #dc2626;
+  color: white;
+}
+
+.emergency-btn:hover {
+  background: #b91c1c;
+}
+
+.support-btn {
+  background: #6b7280;
+  color: white;
+}
+
+.support-btn:hover {
+  background: #4b5563;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.quick-action-card {
+  background: white;
+  border: none;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .quick-action-card {
+  background: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.quick-action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.quick-action-card h4 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+body.dark .quick-action-card h4 {
+  color: #f9fafb;
+}
+
+.quick-action-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+body.dark .quick-action-card p {
+  color: #9ca3af;
+}
+
+.profile-card {
+  background: white;
+  border-radius: 15px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .profile-card {
+  background: #2a2a2a;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.profile-details h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.8rem;
+  color: #1f2937;
+}
+
+body.dark .profile-details h2 {
+  color: #f9fafb;
+}
+
+.profile-details p {
+  margin: 5px 0;
+  color: #6b7280;
+}
+
+body.dark .profile-details p {
+  color: #9ca3af;
+}
+
+.vehicle-info {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .vehicle-info {
+  background: #2a2a2a;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.vehicle-info h3 {
+  margin: 0 0 15px 0;
+  color: #1f2937;
+}
+
+body.dark .vehicle-info h3 {
+  color: #f9fafb;
+}
+
+.vehicle-info p {
+  margin: 8px 0;
+  color: #6b7280;
+}
+
+body.dark .vehicle-info p {
+  color: #9ca3af;
+}

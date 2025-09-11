@@ -455,20 +455,6 @@ body.driver-mode {
   gap: 12px;
 }
 
-.navigate-btn {
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .complete-ride-btn {
   background: #dc2626;
   color: white;
@@ -483,7 +469,6 @@ body.driver-mode {
   gap: 6px;
 }
 
-.navigate-btn:hover,
 .complete-ride-btn:hover {
   transform: translateY(-1px);
   opacity: 0.9;
@@ -597,6 +582,160 @@ body.driver-mode {
   text-align: center;
   padding: 40px;
   color: #6b7280;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.completion-modal {
+  width: 400px;
+  text-align: center;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 5px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid #e5e7eb;
+  justify-content: flex-end;
+}
+
+.close-modal-btn {
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.completion-message {
+  padding: 30px;
+}
+
+.success-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.completion-message h3 {
+  color: #059669;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.earnings-display {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.earnings-label {
+  color: #374151;
+  font-weight: 500;
+}
+
+.earnings-amount {
+  font-size: 24px;
+  font-weight: bold;
+  color: #059669;
+}
+
+.completion-message p {
+  color: #6b7280;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+/* Assigned Ride Actions */
+.assigned-ride-actions {
+  background: #f0f9ff;
+  border: 2px solid #0ea5e9;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.assigned-ride-actions h4 {
+  color: #0369a1;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .rides-list {
@@ -1029,6 +1168,193 @@ body.driver-mode {
 .tips {
   color: #10b981;
   font-weight: 600;
+}
+
+/* Dark Mode Support for Driver Components */
+body.dark .driver-active-rides {
+  background: #1a202c;
+  color: #e2e8f0;
+}
+
+body.dark .active-rides-section {
+  background: #2d3748;
+  color: #e2e8f0;
+}
+
+body.dark .active-ride-card {
+  background: #2a2e3a;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark .active-ride-card:hover {
+  border-color: #63b3ed;
+  box-shadow: 0 4px 12px rgba(99, 179, 237, 0.2);
+}
+
+body.dark .customer-name {
+  color: #f7fafc;
+}
+
+body.dark .customer-phone {
+  color: #63b3ed;
+}
+
+body.dark .route-info .address {
+  color: #e2e8f0;
+}
+
+body.dark .fare {
+  color: #68d391;
+}
+
+body.dark .distance {
+  color: #e2e8f0;
+}
+
+body.dark .ride-time {
+  color: #a0aec0;
+}
+
+body.dark .status-badge {
+  color: white;
+}
+
+body.dark .driver-header {
+  background: #2d3748;
+  color: #e2e8f0;
+}
+
+body.dark .driver-info h2 {
+  color: #f7fafc;
+}
+
+body.dark .driver-stats span {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark .assigned-ride-actions {
+  background: #1a365d;
+  border-color: #3182ce;
+}
+
+body.dark .assigned-ride-actions h4 {
+  color: #63b3ed;
+}
+
+body.dark .in-progress-section {
+  background: #1c4532;
+  border-color: #38a169;
+}
+
+body.dark .progress-info h4 {
+  color: #68d391;
+}
+
+body.dark .progress-info p {
+  color: #68d391;
+}
+
+body.dark .no-rides {
+  color: #a0aec0;
+}
+
+body.dark .back-to-dashboard-btn {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark .back-to-dashboard-btn:hover {
+  background: #2d3748;
+}
+
+body.dark .completion-modal {
+  background: #2d3748;
+  color: #e2e8f0;
+}
+
+body.dark .completion-message h3 {
+  color: #68d391;
+}
+
+body.dark .completion-message p {
+  color: #a0aec0;
+}
+
+body.dark .earnings-display {
+  background: #1c4532;
+  border-color: #38a169;
+}
+
+body.dark .earnings-label {
+  color: #e2e8f0;
+}
+
+body.dark .earnings-amount {
+  color: #68d391;
+}
+
+body.dark .modal-header h3 {
+  color: #f7fafc;
+}
+
+body.dark .modal-close {
+  color: #a0aec0;
+}
+
+body.dark .modal-close:hover {
+  color: #e2e8f0;
+  background: #4a5568;
+}
+
+body.dark .close-modal-btn {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
+body.dark .close-modal-btn:hover {
+  background: #2d3748;
+}
+
+/* Light Mode Improvements */
+body.light .driver-active-rides {
+  background: #f7fafc;
+  color: #1a202c;
+}
+
+body.light .active-rides-section {
+  background: white;
+  color: #1a202c;
+}
+
+body.light .active-ride-card {
+  background: #f7fafc;
+  color: #1a202c;
+}
+
+body.light .customer-name {
+  color: #1a202c;
+}
+
+body.light .route-info .address {
+  color: #2d3748;
+}
+
+body.light .distance {
+  color: #2d3748;
+}
+
+body.light .ride-time {
+  color: #718096;
+}
+
+body.light .driver-info h2 {
+  color: #1a202c;
+}
+
+body.light .no-rides {
+  color: #718096;
 }
 
 /* Responsive Design */

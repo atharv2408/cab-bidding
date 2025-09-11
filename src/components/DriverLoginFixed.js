@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabaseAuth, supabaseDB } from '../utils/supabaseService';
 
-const DriverLogin = ({ onLogin }) => {
+const DriverLoginFixed = ({ onLogin }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
@@ -16,6 +16,7 @@ const DriverLogin = ({ onLogin }) => {
     phone: '',
     vehicleType: 'sedan',
     vehicleNumber: '',
+    vehicleModel: '',
     licenseNumber: ''
   });
 
