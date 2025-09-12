@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createApiUrl, API_ENDPOINTS } from '../config/api';
 
 const RideStatusMonitor = ({ appState }) => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const RideStatusMonitor = ({ appState }) => {
             // Check if ride was completed via API
             const token = localStorage.getItem('customerToken') || localStorage.getItem('authToken');
             if (token) {
-              const response = await fetch('http://localhost:3001/api/customer/history', {
+              const response = await fetch(createApiUrl(API_ENDPOINTS.CUSTOMER_HISTORY), {
                 headers: {
                   'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'

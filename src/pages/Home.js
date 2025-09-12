@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import PreciseLocationMap from '../components/PreciseLocationMap';
 import { supabaseDB } from '../utils/supabaseService';
+import { createApiUrl, API_ENDPOINTS } from '../config/api';
 
 const Home = ({ appState }) => {
   const navigate = useNavigate();
@@ -143,7 +144,7 @@ const Home = ({ appState }) => {
         try {
           // If user is authenticated, use the bid endpoint
           if (customerToken) {
-            const response = await axios.post('http://localhost:5000/bid', {
+            const response = await axios.post(createApiUrl(API_ENDPOINTS.BID), {
               pickup: pickup.address,
               drop: drop.address,
               ...rideRequestData

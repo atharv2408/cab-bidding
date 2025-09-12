@@ -1,14 +1,23 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Supabase configuration - use environment variables or fallback to provided values
-const supabaseUrl = process.env.SUPABASE_URL || 'https://gxnolhrjdkfyyrtkcjhm.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4bm9saHJqZGtmeXlydGtjamhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5MDg5NTksImV4cCI6MjA3MDQ4NDk1OX0.YdHAqb5W02sprZSC-h8L4KduWTgzfPcXG6I5-HEWWVw';
+// Supabase configuration - use environment variables with safe URL fallback
+const supabaseUrl = process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL || 'https://gxnolhrjdkfyyrtkcjhm.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseKey) {
+  console.error('❌ SUPABASE_SERVICE_ROLE_KEY must be set as environment variable');
+  process.exit(1);
+}
 
 let supabase = null;
 
 try {
-  // Initialize Supabase client
-  supabase = createClient(supabaseUrl, supabaseKey);
+  // Initialize Supabase client with service role for backend operations
+  supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false // Backend doesn't need persistent sessions
+    }
+  });
   console.log('🔗 Backend Supabase client initialized successfully');
 } catch (error) {
   console.error('❌ Failed to initialize Supabase client:', error.message);
@@ -38,12 +47,8 @@ const supabaseHelpers = {
           .from('users')
           .insert([{
             email: userData.email || `${userData.phoneNumber.replace(/[^0-9]/g, '')}@phone.local`,
-            full_name: userData.name,
-            phone: userData.phoneNumber,
-            password_hash: 'phone_auth', // Placeholder for phone auth users
-            user_type: 'customer',
-            is_verified: true,
-            is_active: true
+            name: userData.name,
+            phone: userData.phoneNumber
           }])
           .select()
           .single();

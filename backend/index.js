@@ -7,8 +7,13 @@ const Joi = require('joi');
 const { supabase, supabaseHelpers } = require('./supabase');
 
 const app = express();
-const PORT = 5000;
-const JWT_SECRET = 'your-secret-key'; // In production, use environment variables
+const PORT = process.env.BACKEND_PORT || 3001;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('❌ JWT_SECRET must be set as environment variable');
+  process.exit(1);
+}
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -245,9 +250,8 @@ app.get('/auth/profile', authenticateToken, async (req, res) => {
     res.json({
       user: {
         id: user.id,
-        name: user.full_name,
-        phoneNumber: user.phone,
-        isVerified: user.is_verified
+        name: user.name,
+        phone: user.phone
       }
     });
   } catch (error) {
@@ -266,21 +270,36 @@ app.post('/bid', authenticateToken, async (req, res) => {
     }
     
     // Verify user is authenticated and verified
-    const user = users.find(user => user.id === req.user.userId);
-    if (!user || !user.isVerified) {
-      return res.status(403).json({ error: 'User not verified' });
+    const { data: user, error: userError } = await supabaseHelpers.users.findById(req.user.userId);
+    if (!user || userError) {
+      return res.status(404).json({ error: 'User not found' });
     }
     
-    const bids = drivers.map(driver => ({
-      ...driver,
-      bidAmount: Math.floor(Math.random() * 200) + 100
+    // Get available drivers from database
+    const { data: drivers, error: driversError } = await supabaseHelpers.drivers.getAll();
+    if (driversError || !drivers) {
+      return res.status(500).json({ error: 'Unable to fetch drivers' });
+    }
+    
+    // Filter to only available drivers and sanitize PII
+    const availableDrivers = drivers.filter(driver => driver.available);
+    
+    const bids = availableDrivers.map(driver => ({
+      id: driver.id,
+      name: driver.name,
+      vehicle_type: driver.vehicle_type,
+      vehicle_model: driver.vehicle_model,
+      rating: driver.rating,
+      total_rides: driver.total_rides,
+      bidAmount: Math.floor(Math.random() * 200) + 100,
+      eta: Math.floor(Math.random() * 15) + 5 // 5-20 minutes
     }));
 
     res.json({
       bids,
       user: {
         name: user.name,
-        phoneNumber: user.phoneNumber
+        phone: user.phone
       }
     });
   } catch (error) {
@@ -829,10 +848,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Start driver server on port 3001
-const DRIVER_PORT = 3001;
-app.listen(DRIVER_PORT, async () => {
-  console.log(`\n🚀 Cab Bidding System Server running at http://localhost:${DRIVER_PORT}`);
+// Start server
+app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`\n🚀 Cab Bidding System Server running at http://localhost:${PORT}`);
   
   // Test Supabase connection
   console.log('\n🔍 Testing database connection...');

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from '../utils/database';
+import { createApiUrl, API_ENDPOINTS } from '../config/api';
 
 function History({ appState }) {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ function History({ appState }) {
       // Try to load from backend API first
       if (token) {
         try {
-          const response = await fetch('http://localhost:3001/api/customer/history', {
+          const response = await fetch(createApiUrl(API_ENDPOINTS.CUSTOMER_HISTORY), {
             headers: {
               'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from '../utils/database';
+import { createApiUrl, API_ENDPOINTS } from '../config/api';
 
 function Confirm({ appState }) {
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ function Confirm({ appState }) {
       
       // Try to save to Supabase database first
       try {
-        const response = await fetch('http://localhost:3001/api/bookings', {
+        const response = await fetch(createApiUrl(API_ENDPOINTS.BOOKINGS), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

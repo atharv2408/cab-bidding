@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
+import { createApiUrl, API_ENDPOINTS } from '../config/api';
 
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -91,7 +92,7 @@ const Login = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(createApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
