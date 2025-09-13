@@ -102,7 +102,7 @@ app.post('/auth/register', async (req, res) => {
     
     if (existingUser && !findError) {
       // User exists, generate new OTP
-      console.log('📱 Existing user found:', existingUser.full_name);
+      console.log('📱 Existing user found:', existingUser.name);
       
       // Store OTP in memory for demo
       otpStore.set(phoneNumber, { otp, expiry: otpExpiry, userId: existingUser.id });
@@ -127,7 +127,7 @@ app.post('/auth/register', async (req, res) => {
       return res.status(500).json({ error: 'Failed to create user account' });
     }
     
-    console.log('👤 New user created in Supabase:', newUser.full_name, 'ID:', newUser.id);
+    console.log('👤 New user created in Supabase:', newUser.name, 'ID:', newUser.id);
     
     // Store OTP in memory for demo
     otpStore.set(phoneNumber, { otp, expiry: otpExpiry, userId: newUser.id });
@@ -177,7 +177,7 @@ app.post('/auth/verify-otp', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    console.log('✅ OTP verified for user:', user.full_name);
+    console.log('✅ OTP verified for user:', user.name);
     
     // Clear OTP from memory
     otpStore.delete(phoneNumber);
@@ -194,9 +194,8 @@ app.post('/auth/verify-otp', async (req, res) => {
       token,
       user: {
         id: user.id,
-        name: user.full_name,
-        phoneNumber: user.phone,
-        isVerified: user.is_verified
+        name: user.name,
+        phone: user.phone
       }
     });
     
@@ -215,19 +214,17 @@ app.post('/auth/resend-otp', async (req, res) => {
       return res.status(400).json({ error: 'Phone number is required' });
     }
     
-    const user = users.find(user => user.phoneNumber === phoneNumber);
-    if (!user) {
+    // Find user in Supabase database
+    const { data: user, error: userError } = await supabaseHelpers.users.findByPhone(phoneNumber);
+    if (!user || userError) {
       return res.status(404).json({ error: 'User not found' });
     }
     
     const otp = generateOTP();
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
     
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    
     // Store OTP in memory for demo
-    otpStore.set(phoneNumber, { otp, expiry: otpExpiry });
+    otpStore.set(phoneNumber, { otp, expiry: otpExpiry, userId: user.id });
     
     await sendOTP(phoneNumber, otp);
     
@@ -321,7 +318,7 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
     
     // Ensure customer phone matches the authenticated user
     bookingData.customer_phone = user.phone;
-    bookingData.customer_name = user.full_name;
+    bookingData.customer_name = user.name;
     
     const { data: booking, error } = await supabaseHelpers.bookings.create(bookingData);
     
@@ -330,7 +327,7 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
       return res.status(500).json({ success: false, message: 'Failed to create booking' });
     }
     
-    console.log('🎆 New booking created:', booking.id, 'for user:', user.full_name);
+    console.log('🎆 New booking created:', booking.id, 'for user:', user.name);
     
     res.json({
       success: true,
@@ -419,7 +416,7 @@ app.get('/api/bookings/active', authenticateToken, async (req, res) => {
       !['completed', 'cancelled'].includes(booking.status)
     );
     
-    console.log(`📊 Found ${activeBookings.length} active bookings for user ${user.full_name}`);
+    console.log(`📊 Found ${activeBookings.length} active bookings for user ${user.name}`);
     
     res.json({
       success: true,
@@ -489,7 +486,7 @@ app.post('/api/ride/complete', authenticateToken, async (req, res) => {
       const bookingData = {
         id: bookingId,
         customer_phone: user?.phone || 'Unknown',
-        customer_name: user?.full_name || 'Customer', 
+        customer_name: user?.name || 'Customer', 
         pickup_location: { lat: 0, lng: 0 },
         drop_location: { lat: 0, lng: 0 },
         pickup_address: 'Pickup Location',
@@ -627,7 +624,7 @@ app.get('/api/customer/history', authenticateToken, async (req, res) => {
       const customerHistory = bookings.map(booking => ({
         id: booking.id,
         user_id: userId,
-        customer_name: booking.customer_name || user.full_name,
+        customer_name: booking.customer_name || user.name,
         customer_phone: booking.customer_phone || user.phone,
         pickup_address: booking.pickup_address || 'Pickup Location',
         drop_address: booking.drop_address || 'Drop Location',
@@ -647,7 +644,7 @@ app.get('/api/customer/history', authenticateToken, async (req, res) => {
         created_at: booking.created_at
       }));
       
-      console.log(`📊 Found ${customerHistory.length} bookings for user ${user.full_name}`);
+      console.log(`📊 Found ${customerHistory.length} bookings for user ${user.name}`);
       
       return res.json({
         success: true,
