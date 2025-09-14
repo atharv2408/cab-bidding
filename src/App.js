@@ -18,6 +18,7 @@ import History from './pages/History';
 import RideStatusMonitor from './components/RideStatusMonitor';
 // Driver App
 import DriverApp from './DriverApp';
+import DriverPortalButton from './components/DriverPortalButton';
 
 // Check if user is authenticated (for customers)
 const isAuthenticated = () => {
@@ -165,13 +166,16 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setT
                 >
                   🚗 Ride History
                 </Link>
-                <Link 
-                  to="/driver/login" 
-                  onClick={handleAccountMenuClick}
+                <button
+                  onClick={() => {
+                    handleAccountMenuClick();
+                    console.log('🚗 Driver Portal button clicked - using direct navigation');
+                    window.location.href = '/driver/login';
+                  }}
                   className="account-menu-item driver-link"
                 >
                   🚙 Driver Portal
-                </Link>
+                </button>
                 <button 
                   onClick={() => { handleAccountMenuClick(); handleLogout(); }}
                   className="account-menu-item logout-item"
@@ -196,20 +200,45 @@ function App() {
       setCurrentPath(window.location.pathname);
     };
     
+    // Also listen for pathname changes (for programmatic navigation)
+    const checkPathChange = () => {
+      const newPath = window.location.pathname;
+      if (newPath !== currentPath) {
+        console.log('🔄 Path changed from', currentPath, 'to', newPath);
+        setCurrentPath(newPath);
+      }
+    };
+    
+    // Check immediately
+    checkPathChange();
+    
+    // Set up listeners
     window.addEventListener('popstate', handlePopState);
+    
+    // Also check periodically for programmatic navigation
+    const pathCheckInterval = setInterval(checkPathChange, 100);
     
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      clearInterval(pathCheckInterval);
     };
-  }, []);
+  }, [currentPath]);
 
   // Check if we're in driver mode based on URL
   const isDriverMode = currentPath.startsWith('/driver');
+  
+  console.log('🔍 App routing debug:', {
+    currentPath,
+    isDriverMode,
+    timestamp: new Date().toISOString()
+  });
 
   if (isDriverMode) {
+    console.log('🚗 Switching to Driver Mode for path:', currentPath);
     return <DriverApp ReverseGeocode={ReverseGeocode} />;
   }
 
+  console.log('👥 Staying in Customer Mode for path:', currentPath);
   return <CustomerApp />;
 }
 

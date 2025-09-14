@@ -12,7 +12,53 @@ const DriverBidNotification = ({ driverData, onRideConfirmed }) => {
   
   const driver = driverData || JSON.parse(localStorage.getItem('driverData') || '{}');
 
-  // Check for bid acceptance every 3 seconds
+  // Listen for immediate notifications via localStorage events
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'pendingDriverNotification' && e.newValue) {
+        const notification = JSON.parse(e.newValue);
+        if (notification.driverId === (driver.id || driver.uid)) {
+          console.log('🚨 Instant notification received!', notification);
+          const rideData = {
+            id: notification.bookingId,
+            customer_name: notification.customerName,
+            pickup_address: notification.pickup,
+            drop_address: notification.drop,
+            otp: notification.otp,
+            status: 'confirmed',
+            selected_driver_id: notification.driverId
+          };
+          setConfirmedRide(rideData);
+          setShowNotification(true);
+          // Clear the notification
+          localStorage.removeItem('pendingDriverNotification');
+        }
+      }
+    };
+    
+    // Listen for storage events
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check immediately for any pending notifications
+    const checkPendingNotification = () => {
+      const pendingNotification = localStorage.getItem('pendingDriverNotification');
+      if (pendingNotification) {
+        const notification = JSON.parse(pendingNotification);
+        if (notification.driverId === (driver.id || driver.uid)) {
+          console.log('🚨 Found pending notification on load!', notification);
+          handleStorageChange({ key: 'pendingDriverNotification', newValue: pendingNotification });
+        }
+      }
+    };
+    
+    checkPendingNotification();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [driver.id, driver.uid]);
+  
+  // Check for bid acceptance with faster polling (backup method)
   useEffect(() => {
     const checkForAcceptedBid = async () => {
       try {
@@ -73,9 +119,9 @@ const DriverBidNotification = ({ driverData, onRideConfirmed }) => {
       }
     };
 
-    // Check immediately and then every 3 seconds
+    // Check immediately and then every 1 second for faster response
     checkForAcceptedBid();
-    const interval = setInterval(checkForAcceptedBid, 3000);
+    const interval = setInterval(checkForAcceptedBid, 1000);
     
     return () => clearInterval(interval);
   }, [driver.id, driver.uid, confirmedRide]);

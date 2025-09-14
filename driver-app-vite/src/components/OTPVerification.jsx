@@ -95,16 +95,33 @@ const OTPVerification = ({ activeRide, onRideComplete, onRideStart }) => {
   };
 
   const handleOTPVerification = async () => {
-    if (!otpInput || otpInput.length !== 6) {
-      alert('Please enter a valid 6-digit OTP');
+    // Validate OTP input
+    const cleanedInput = otpInput.replace(/\D/g, ''); // Remove non-digits
+    
+    if (!cleanedInput || cleanedInput.length !== 6) {
+      alert('Please enter a valid 6-digit OTP (numbers only)');
+      return;
+    }
+    
+    if (!/^\d{6}$/.test(cleanedInput)) {
+      alert('OTP must be exactly 6 digits');
       return;
     }
 
     setIsVerifying(true);
 
     try {
-      // Verify OTP with the ride
-      if (otpInput === activeRide.otp) {
+      // Verify OTP with the ride - handle different data types and whitespace
+      const normalizedInput = String(cleanedInput).trim();
+      const normalizedStoredOtp = String(activeRide.otp).trim();
+      
+      console.log('🔐 OTP Verification Debug:');
+      console.log(`   Original Input: "${otpInput}" -> Cleaned: "${cleanedInput}"`);
+      console.log(`   Normalized Input: "${normalizedInput}" (${typeof normalizedInput})`);
+      console.log(`   Stored OTP: "${activeRide.otp}" (${typeof activeRide.otp}) -> normalized: "${normalizedStoredOtp}"`);
+      console.log(`   Match result: ${normalizedInput === normalizedStoredOtp}`);
+      
+      if (normalizedInput === normalizedStoredOtp) {
         // Start the ride
         const { data, error } = await supabaseDB.rpc('start_ride', {
           p_ride_history_id: activeRide.ride_history_id,
@@ -121,10 +138,12 @@ const OTPVerification = ({ activeRide, onRideComplete, onRideStart }) => {
             onRideStart(activeRide.ride_history_id);
           }
         } else {
+          console.error('Failed to start ride - no data returned from start_ride function');
           alert('Failed to start ride. Please try again.');
         }
       } else {
-        alert('Invalid OTP. Please check with the customer.');
+        console.warn('OTP mismatch:', { input: normalizedInput, stored: normalizedStoredOtp });
+        alert(`Invalid OTP. Please check with the customer.\n\nEntered: ${normalizedInput}\nExpected format: 6-digit number`);
       }
     } catch (error) {
       console.error('OTP verification error:', error);

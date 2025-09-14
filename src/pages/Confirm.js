@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { database } from '../utils/database';
 import { createApiUrl, API_ENDPOINTS } from '../config/api';
+import otpManager from '../utils/otpManager';
 
 function Confirm({ appState }) {
   const navigate = useNavigate();
@@ -16,9 +17,9 @@ function Confirm({ appState }) {
       if (selectedBid) {
         // Only generate OTP if one doesn't exist
         if (!rideOTP) {
-          const newOTP = ('0000' + Math.floor(Math.random() * 10000)).slice(-4);
+          const newOTP = otpManager.getInstantOTP('temp_' + Date.now(), selectedBid.driver_id);
           setRideOTP(newOTP);
-          console.log('🔐 Generated new OTP for ride:', newOTP);
+          console.log('🚀 Instant OTP generated for ride:', newOTP);
         }
 
         try {
@@ -121,12 +122,43 @@ function Confirm({ appState }) {
         
         localStorage.setItem('confirmedBooking', JSON.stringify(fallbackBooking));
         localStorage.setItem(`confirmed_${bookingId}`, JSON.stringify(fallbackBooking));
-        // Store OTP in multiple locations for driver access
+        // Store OTP in multiple locations for immediate driver access
         localStorage.setItem('currentRideOTP', rideOTP);
         localStorage.setItem('rideOTP', rideOTP);
         localStorage.setItem(`otp_${bookingId}`, rideOTP);
+        localStorage.setItem(`driver_otp_${selectedBid.driver_id}`, rideOTP);
+        localStorage.setItem('latestRideOTP', JSON.stringify({
+          otp: rideOTP,
+          bookingId: bookingId,
+          driverId: selectedBid.driver_id,
+          timestamp: Date.now(),
+          customerName: user?.name || 'Customer'
+        }));
         
         console.log('🔐 Customer OTP stored for driver verification:', rideOTP);
+        
+        // Trigger immediate notification to driver
+        const driverNotification = {
+          type: 'RIDE_ACCEPTED',
+          driverId: selectedBid.driver_id,
+          bookingId: bookingId,
+          otp: rideOTP,
+          timestamp: Date.now(),
+          customerName: user?.name || 'Customer',
+          pickup: pickup.address,
+          drop: drop.address,
+          fare: selectedBid.price
+        };
+        
+        // Store notification for immediate driver pickup
+        localStorage.setItem('pendingDriverNotification', JSON.stringify(driverNotification));
+        localStorage.setItem(`notification_${selectedBid.driver_id}`, JSON.stringify(driverNotification));
+        
+        // Trigger a storage event to notify other tabs/windows
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'pendingDriverNotification',
+          newValue: JSON.stringify(driverNotification)
+        }));
         
         console.log('✅ Booking saved in fallback mode:', bookingId);
         bookingSaved = true;
