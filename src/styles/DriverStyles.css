@@ -1,20 +1,28 @@
-/* Driver-specific styles */
+/* Enhanced Driver-specific styles with consistent color palette */
 
 /* Driver Mode Body Styles */
 body.driver-mode {
-  --primary-color: #2563eb;
-  --secondary-color: #1d4ed8;
-  --accent-color: #3b82f6;
-  --success-color: #059669;
-  --warning-color: #d97706;
-  --error-color: #dc2626;
-  --driver-bg: #f8fafc;
+  /* Use consistent color palette from main App.css */
+  --driver-primary: var(--secondary-500);
+  --driver-primary-dark: var(--secondary-700);
+  --driver-primary-light: var(--secondary-300);
+  --driver-accent: var(--primary-500);
+  --driver-success: var(--success-color);
+  --driver-warning: var(--warning-color);
+  --driver-error: var(--error-color);
+  --driver-bg: var(--gray-50);
+  --driver-bg-secondary: var(--gray-100);
+  --driver-text: var(--text-primary);
+  --driver-text-secondary: var(--text-secondary);
+  --driver-border: var(--gray-200);
 }
 
-/* Driver Navigation Bar */
+/* Enhanced Driver Navigation Bar */
 .driver-menubar {
-  background: linear-gradient(135deg, #1e40af, #3b82f6);
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+  background: var(--gradient-secondary);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(var(--backdrop-blur));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .driver-menubar .brand-text {
@@ -58,7 +66,7 @@ body.driver-mode {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-hero);
   padding: 20px;
 }
 
@@ -117,19 +125,20 @@ body.driver-mode {
 
 .driver-login-btn {
   width: 100%;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: var(--gradient-secondary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: var(--shadow-md);
 }
 
 .driver-login-btn:hover {

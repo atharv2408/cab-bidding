@@ -16,6 +16,7 @@ import Confirm from './pages/Confirm';
 import Success from './pages/Success';
 import History from './pages/History';
 import RideStatusMonitor from './components/RideStatusMonitor';
+import Chatbot from './components/Chatbot';
 // Driver App
 import DriverApp from './DriverApp';
 import DriverPortalButton from './components/DriverPortalButton';
@@ -384,6 +385,9 @@ function CustomerApp() {
           
           {/* Add Ride Status Monitor for real-time completion updates */}
           <RideStatusMonitor appState={appState} />
+          
+          {/* Add Chatbot for customer support */}
+          <Chatbot userType="customer" />
           
           <main className="main-content">
             <Routes>

@@ -5,6 +5,7 @@ import DriverLogin from './components/DriverLogin';
 import DriverDashboard from './pages/DriverDashboard';
 import DriverHistory from './pages/DriverHistory';
 import DriverActiveRides from './pages/DriverActiveRides';
+import Chatbot from './components/Chatbot';
 
 // Check if driver is authenticated
 const isDriverAuthenticated = () => {
@@ -226,6 +227,9 @@ function DriverApp({ ReverseGeocode }) {
             setTheme={setTheme}
           />
         )}
+        
+        {/* Add Chatbot for driver support */}
+        {driver && <Chatbot userType="driver" />}
         
         <main className="main-content driver-content">
           <Routes>

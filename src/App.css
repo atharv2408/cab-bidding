@@ -9,37 +9,158 @@
   box-sizing: border-box;
 }
 
-/* Modern CSS Variables */
+/* Enhanced Professional Color System - Light Theme */
 :root {
-  /* Primary Colors */
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  /* Brand Colors - Premium Blue Palette */
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;  /* Primary brand color */
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
   
-  /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.1);
+  /* Secondary Colors - Professional Indigo */
+  --secondary-50: #eef2ff;
+  --secondary-100: #e0e7ff;
+  --secondary-200: #c7d2fe;
+  --secondary-300: #a5b4fc;
+  --secondary-400: #818cf8;
+  --secondary-500: #6366f1;
+  --secondary-600: #4f46e5;
+  --secondary-700: #4338ca;
+  --secondary-800: #3730a3;
+  --secondary-900: #312e81;
+  
+  /* Accent Colors - Premium Emerald */
+  --accent-50: #ecfdf5;
+  --accent-100: #d1fae5;
+  --accent-200: #a7f3d0;
+  --accent-300: #6ee7b7;
+  --accent-400: #34d399;
+  --accent-500: #10b981;  /* Success/accent color */
+  --accent-600: #059669;
+  --accent-700: #047857;
+  --accent-800: #065f46;
+  --accent-900: #064e3b;
+  
+  /* Neutral Colors - High Contrast */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  /* Enhanced Semantic Colors */
+  --success-color: #10b981;
+  --success-light: #34d399;
+  --success-dark: #059669;
+  --warning-color: #f59e0b;
+  --warning-light: #fbbf24;
+  --warning-dark: #d97706;
+  --error-color: #ef4444;
+  --error-light: #f87171;
+  --error-dark: #dc2626;
+  --info-color: var(--primary-500);
+  --info-light: var(--primary-400);
+  --info-dark: var(--primary-600);
+  
+  /* Text Colors - High Contrast */
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-700);
+  --text-muted: var(--gray-600);
+  --text-inverse: #ffffff;
+  
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: var(--gray-50);
+  --bg-tertiary: var(--gray-100);
+  --bg-overlay: rgba(0, 0, 0, 0.8);
+  
+  /* Enhanced Modern Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--secondary-500) 0%, var(--secondary-700) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent-500) 0%, var(--accent-700) 100%);
+  --gradient-success: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
+  --gradient-warning: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-dark) 100%);
+  --gradient-error: linear-gradient(135deg, var(--error-color) 0%, var(--error-dark) 100%);
+  --gradient-hero: linear-gradient(135deg, var(--primary-600) 0%, var(--secondary-600) 50%, var(--accent-600) 100%);
+  --gradient-hero-alt: linear-gradient(135deg, var(--accent-600) 0%, var(--primary-600) 100%);
+  --gradient-subtle: linear-gradient(135deg, var(--primary-50) 0%, var(--accent-50) 100%);
+  --gradient-dark: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-900) 100%);
+  
+  /* Enhanced Glassmorphism */
+  --glass-bg-light: rgba(255, 255, 255, 0.15);
+  --glass-bg-dark: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.2);
   --backdrop-blur: 20px;
   
-  /* Shadows */
-  --shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.37);
-  --shadow-medium: 0 12px 40px rgba(31, 38, 135, 0.4);
-  --shadow-strong: 0 16px 60px rgba(31, 38, 135, 0.5);
+  /* Professional Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
   
-  /* Animations */
+  /* Modern Animations */
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --transition-fast: all 0.15s ease-out;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
 }
 
-/* Menubar Styles */
+/* Enhanced Dark Theme Variables */
+:root[data-theme="dark"] {
+  /* Dark Background Colors */
+  --bg-primary: var(--gray-900);
+  --bg-secondary: var(--gray-800);
+  --bg-tertiary: var(--gray-700);
+  --bg-overlay: rgba(0, 0, 0, 0.9);
+  
+  /* Dark Text Colors - High Contrast */
+  --text-primary: var(--gray-50);
+  --text-secondary: var(--gray-200);
+  --text-muted: var(--gray-400);
+  --text-inverse: var(--gray-900);
+  
+  /* Enhanced Dark Glassmorphism */
+  --glass-bg-light: rgba(255, 255, 255, 0.08);
+  --glass-bg-dark: rgba(0, 0, 0, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  
+  /* Enhanced Dark Gradients */
+  --gradient-hero: linear-gradient(135deg, var(--primary-800) 0%, var(--secondary-800) 50%, var(--accent-800) 100%);
+  --gradient-hero-alt: linear-gradient(135deg, var(--accent-800) 0%, var(--primary-800) 100%);
+  --gradient-primary: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-800) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--secondary-600) 0%, var(--secondary-800) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent-600) 0%, var(--accent-800) 100%);
+  --gradient-subtle: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-700) 100%);
+}
+
+/* Professional Menubar Styles */
 .app-menubar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   padding: 0;
-  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-lg);
   position: relative;
   z-index: 1000;
   margin-bottom: 0;
+  backdrop-filter: blur(var(--backdrop-blur));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .menubar-container {
@@ -68,23 +189,25 @@
 
 .menubar-nav a {
   display: block;
-  padding: 15px 20px;
-  color: white;
+  padding: 16px 24px;
+  color: var(--text-inverse) !important;
   text-decoration: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  transition: var(--transition-smooth);
   position: relative;
-  font-size: 14px;
+  font-size: 15px;
+  letter-spacing: 0.025em;
 }
 
 .menubar-nav a:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .menubar-nav a.active {
-  background: rgba(255, 255, 255, 0.2);
-  font-weight: 600;
+  background: rgba(255, 255, 255, 0.25);
+  font-weight: 700;
 }
 
 .menubar-nav a.active::after {
@@ -93,10 +216,11 @@
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 30px;
-  height: 3px;
-  background: white;
-  border-radius: 2px;
+  width: 40px;
+  height: 4px;
+  background: var(--text-inverse);
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .menubar-logout {
@@ -120,32 +244,34 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Theme Toggle Button */
+/* Professional Theme Toggle Button */
 .menubar-theme-toggle {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 12px;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-inverse) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: 18px;
+  font-weight: 600;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  height: 38px;
+  min-width: 48px;
+  height: 48px;
+  backdrop-filter: blur(10px);
 }
 
 .menubar-theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px) scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .menubar-theme-toggle:active {
-  transform: translateY(0) scale(1.05);
+  transform: translateY(-1px) scale(1.02);
 }
 
 /* Account Menu Container */
@@ -154,70 +280,95 @@
 }
 
 .menubar-account {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 16px;
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-inverse) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 18px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-size: 15px;
+  font-weight: 600;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  backdrop-filter: blur(10px);
 }
 
 .menubar-account:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
-/* Account Dropdown */
+/* Professional Account Dropdown */
 .account-dropdown {
   position: absolute;
   top: 100%;
   right: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   z-index: 1000;
-  min-width: 160px;
+  min-width: 200px;
   overflow: hidden;
-  margin-top: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 12px;
+  border: 1px solid var(--gray-200);
+  backdrop-filter: blur(20px);
+}
+
+body.dark .account-dropdown {
+  background: var(--bg-secondary);
+  border-color: var(--gray-600);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .account-menu-item {
   display: block;
   width: 100%;
-  padding: 12px 16px;
-  color: #333;
+  padding: 16px 20px;
+  color: var(--text-primary) !important;
   text-decoration: none;
   background: none;
   border: none;
   text-align: left;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 15px;
+  font-weight: 600;
+  transition: var(--transition-fast);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+body.dark .account-menu-item {
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--gray-700);
 }
 
 .account-menu-item:hover {
-  background: #f8f9fa;
-  color: #007bff;
+  background: var(--primary-50);
+  color: var(--primary-700) !important;
+  transform: translateX(4px);
+}
+
+body.dark .account-menu-item:hover {
+  background: var(--primary-900);
+  color: var(--primary-200) !important;
 }
 
 .account-menu-item.logout-item {
   border-bottom: none;
-  color: #dc3545;
+  color: var(--error-color) !important;
 }
 
 .account-menu-item.logout-item:hover {
-  background: #f8d7da;
-  color: #721c24;
+  background: #fef2f2;
+  color: #dc2626 !important;
+}
+
+body.dark .account-menu-item.logout-item:hover {
+  background: #450a0a;
+  color: #fca5a5 !important;
 }
 
 /* Dark theme dropdown */
@@ -275,20 +426,62 @@ body.dark .app-menubar {
   }
 }
 
-body.light {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  background-attachment: fixed;
-  min-height: 100vh;
-  color: #2d3748;
-  font-family: 'Poppins', sans-serif;
+/* Base Body Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  transition: var(--transition-smooth);
 }
 
-body.dark {
-  background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+/* Light Theme */
+body.light,
+body:not(.dark) {
+  background: var(--gradient-hero);
   background-attachment: fixed;
+  color: var(--text-primary);
   min-height: 100vh;
-  color: #e2e8f0;
-  font-family: 'Poppins', sans-serif;
+}
+
+/* Dark Theme */
+body.dark {
+  background: var(--gradient-hero);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* Ensure text visibility in all themes */
+body.light *:not(.menubar-nav a):not(.action-btn):not(.nav-btn) {
+  color: var(--text-primary) !important;
+}
+
+body.dark *:not(.menubar-nav a):not(.action-btn):not(.nav-btn) {
+  color: var(--text-primary) !important;
+}
+
+/* Exception for specific elements that need custom colors */
+body.light .menubar-nav a,
+body.dark .menubar-nav a {
+  color: var(--text-inverse) !important;
+}
+
+body.light .success-color,
+body.dark .success-color {
+  color: var(--success-color) !important;
+}
+
+body.light .warning-color,
+body.dark .warning-color {
+  color: var(--warning-color) !important;
+}
+
+body.light .error-color,
+body.dark .error-color {
+  color: var(--error-color) !important;
 }
 
 .App {
@@ -441,19 +634,20 @@ body.dark {
   background: #c82333;
 }
 
-/* Dark theme styles */
+/* Enhanced Dark Theme Implementation */
 body.dark .app-header {
-  background: #2a2a2a;
-  border-bottom-color: #444;
+  background: var(--bg-secondary);
+  border-bottom-color: var(--gray-600);
+  color: var(--text-primary);
 }
 
 body.dark .user-info span {
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
-/* Improved contrast for light mode */
+/* Enhanced Light Mode Contrast */
 body.light .user-info span {
-  color: #1a202c;
+  color: var(--text-primary);
 }
 
 /* Better text contrast in light mode */
@@ -461,15 +655,17 @@ body.light .user-info span {
   color: rgba(255, 255, 255, 0.95);
 }
 
-/* Dark mode for app content */
+/* Enhanced Dark Mode Implementation */
 body.dark {
-  background-color: #1a202c;
-  color: #e2e8f0;
+  background: var(--gradient-dark);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  min-height: 100vh;
 }
 
 body.dark .App {
-  background-color: #1a202c;
-  color: #e2e8f0;
+  background: transparent;
+  color: var(--text-primary);
 }
 
 /* Ensure all text is visible in dark mode */
