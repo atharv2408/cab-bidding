@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, Circle, Popup, useMap } 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
+import '../styles/MapControls.css';
 
 // Custom hook to handle map centering and zooming
 const MapController = ({ center, zoom, bounds }) => {
@@ -352,47 +353,20 @@ const PreciseLocationMap = ({
   return (
     <div className={`precise-location-map ${className}`}>
       {/* Location controls */}
-      <div className="map-controls" style={{
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px'
-      }}>
+      <div className="map-controls">
         <button
           onClick={detectPreciseLocation}
           disabled={isDetecting}
           className="map-control-btn"
           title={t('location.detectMyLocation')}
-          style={{
-            background: '#4285f4',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '8px',
-            cursor: isDetecting ? 'not-allowed' : 'pointer',
-            opacity: isDetecting ? 0.6 : 1,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-          }}
         >
           {isDetecting ? '⟳' : '🎯'}
         </button>
         
         <button
           onClick={watchId ? stopLocationTracking : startLocationTracking}
-          className="map-control-btn"
+          className={`map-control-btn ${watchId ? 'tracking-active' : ''}`}
           title={watchId ? t('location.stopTracking') : t('location.startTracking')}
-          style={{
-            background: watchId ? '#FF5722' : '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '8px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-          }}
         >
           {watchId ? '⏹️' : '📡'}
         </button>

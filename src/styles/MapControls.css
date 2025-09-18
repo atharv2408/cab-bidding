@@ -1,0 +1,166 @@
+/* Map Controls Styles - Theme Aware */
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.map-control-btn {
+  background: var(--primary-500);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-smooth);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.map-control-btn:hover:not(:disabled) {
+  background: var(--primary-600);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.map-control-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.map-control-btn.tracking-active {
+  background: var(--error-color);
+}
+
+.map-control-btn.tracking-active:hover {
+  background: var(--error-dark);
+}
+
+/* Dark mode adjustments */
+body.dark .map-control-btn {
+  background: var(--primary-600);
+  border: 1px solid var(--gray-600);
+}
+
+body.dark .map-control-btn:hover:not(:disabled) {
+  background: var(--primary-700);
+  border-color: var(--primary-500);
+}
+
+/* Custom marker styles that respect theme */
+.current-location-marker {
+  position: relative;
+}
+
+.pickup-marker, .drop-marker {
+  position: relative;
+}
+
+/* Ensure map popup text is visible */
+body.dark .leaflet-popup-content-wrapper {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+body.dark .leaflet-popup-tip {
+  background: var(--bg-secondary);
+}
+
+body.light .leaflet-popup-content-wrapper {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* OTP verification styles - theme aware */
+.otp-verification-container {
+  color: var(--text-primary);
+}
+
+.no-active-ride {
+  background: var(--bg-secondary);
+  border-color: var(--gray-300);
+  color: var(--text-secondary);
+}
+
+.active-ride-info {
+  background: var(--primary-100);
+  border-left-color: var(--primary-500);
+  color: var(--text-primary);
+}
+
+.active-ride-info h3 {
+  color: var(--primary-700);
+}
+
+.otp-input-section {
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+}
+
+.otp-input-section h4 {
+  color: var(--text-primary);
+}
+
+.otp-input-section p {
+  color: var(--text-secondary);
+}
+
+.otp-input {
+  border-color: var(--gray-300);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.otp-input:focus {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(var(--primary-500), 0.1);
+}
+
+.verify-otp-btn {
+  background: var(--success-color);
+  color: var(--text-inverse);
+}
+
+.verify-otp-btn:hover:not(:disabled) {
+  background: var(--success-dark);
+}
+
+.verify-otp-btn:disabled {
+  background: var(--gray-400);
+}
+
+.post-otp-options {
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+}
+
+.verification-success h4 {
+  color: var(--success-color);
+}
+
+/* Dark mode specific adjustments */
+body.dark .no-active-ride {
+  background: var(--bg-tertiary);
+  border-color: var(--gray-600);
+}
+
+body.dark .active-ride-info {
+  background: var(--primary-900);
+  color: var(--text-primary);
+}
+
+body.dark .active-ride-info h3 {
+  color: var(--primary-300);
+}

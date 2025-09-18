@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import '../styles/MapControls.css';
 import 'leaflet/dist/leaflet.css';
 import { supabaseDB } from '../utils/supabaseService';
 
@@ -405,32 +406,6 @@ const OTPVerification = ({ activeRide, onRideComplete, onRideStart }) => {
           margin: 0 auto;
           padding: 20px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        .no-active-ride {
-          text-align: center;
-          padding: 40px 20px;
-          background: #f8f9fa;
-          border-radius: 12px;
-          border: 2px dashed #dee2e6;
-        }
-
-        .active-ride-info {
-          background: #e3f2fd;
-          padding: 20px;
-          border-radius: 12px;
-          margin-bottom: 20px;
-          border-left: 4px solid #2196f3;
-        }
-
-        .active-ride-info h3 {
-          margin: 0 0 15px 0;
-          color: #1565c0;
-        }
-
-        .ride-details p {
-          margin: 8px 0;
-          color: #333;
         }
 
         .otp-input-section {
