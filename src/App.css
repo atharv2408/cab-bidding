@@ -325,7 +325,9 @@ body.dark .account-dropdown {
 }
 
 .account-menu-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   padding: 16px 20px;
   color: var(--text-primary) !important;
@@ -336,22 +338,99 @@ body.dark .account-dropdown {
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
-  transition: var(--transition-fast);
+  transition: var(--transition-smooth);
   border-bottom: 1px solid var(--gray-100);
+  position: relative;
+  overflow: hidden;
 }
 
+/* Ride History Button - Enhanced Special Styling */
+.account-menu-item[href="/history"] {
+  background: linear-gradient(135deg, #e8f5e8 0%, #e1f2fe 100%) !important;
+  color: #1e3a8a !important;
+  border-left: 4px solid #059669;
+  font-weight: 700;
+  border-radius: 0 10px 10px 0;
+  margin: 4px 0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.account-menu-item[href="/history"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.account-menu-item[href="/history"]:hover::before {
+  left: 100%;
+}
+
+.account-menu-item[href="/history"]:hover {
+  background: linear-gradient(135deg, #bbf7d0 0%, #bfdbfe 100%) !important;
+  color: #0c4a6e !important;
+  transform: translateX(8px) scale(1.02);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3), inset 0 0 0 2px #059669;
+  border-left-color: #047857;
+  border-left-width: 6px;
+}
+
+/* Dark mode Ride History Button */
+body.dark .account-menu-item[href="/history"] {
+  background: linear-gradient(135deg, #064e3b 0%, #1e3a8a 100%) !important;
+  color: #6ee7b7 !important;
+  border-left-color: #34d399;
+  box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
+}
+
+body.dark .account-menu-item[href="/history"]::before {
+  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.2), transparent);
+}
+
+body.dark .account-menu-item[href="/history"]:hover {
+  background: linear-gradient(135deg, #047857 0%, #1e40af 100%) !important;
+  color: #a7f3d0 !important;
+  box-shadow: 0 4px 16px rgba(52, 211, 153, 0.4), inset 0 0 0 2px #34d399;
+  border-left-color: #10b981;
+  border-left-width: 6px;
+}
+
+/* Ride History Icon Animation */
+.account-menu-item[href="/history"]:hover .car-icon {
+  animation: carBounce 0.6s ease-in-out;
+}
+
+@keyframes carBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
+/* General menu item styles */
 body.dark .account-menu-item {
   color: var(--text-primary) !important;
   border-bottom-color: var(--gray-700);
 }
 
-.account-menu-item:hover {
+.account-menu-item:not([href="/history"]):hover {
   background: var(--primary-50);
   color: var(--primary-700) !important;
   transform: translateX(4px);
 }
 
-body.dark .account-menu-item:hover {
+body.dark .account-menu-item:not([href="/history"]):hover {
   background: var(--primary-900);
   color: var(--primary-200) !important;
 }
