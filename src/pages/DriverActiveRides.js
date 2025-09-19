@@ -23,6 +23,16 @@ const DriverActiveRides = ({ driverData }) => {
   // Get driver data from localStorage if not passed as prop
   const driver = driverData || JSON.parse(localStorage.getItem('driverData') || '{}');
 
+  // Apply dark theme to body when component mounts
+  useEffect(() => {
+    document.body.classList.add('dark');
+    
+    return () => {
+      // Keep dark theme when unmounting since it's the default for the entire app
+      // document.body.classList.remove('dark');
+    };
+  }, []);
+
   useEffect(() => {
     if (!driver.uid && !driver.id) {
       navigate('/driver/login');
@@ -220,6 +230,21 @@ const DriverActiveRides = ({ driverData }) => {
       if (rideCompleted) {
         // Remove from active rides
         setActiveRides(prev => prev.filter(r => r.id !== ride.id));
+        
+        // Mark ride as completed to prevent future OTP notifications
+        const shownRides = JSON.parse(localStorage.getItem('shownNotificationRides') || '[]');
+        if (!shownRides.includes(ride.id)) {
+          shownRides.push(ride.id);
+          localStorage.setItem('shownNotificationRides', JSON.stringify(shownRides.slice(-50)));
+          console.log('🔒 Marked completed ride to prevent future OTP notifications:', ride.id);
+        }
+        
+        // Clear any related notification data
+        localStorage.removeItem(`notification_${driver.id}`);
+        localStorage.removeItem(`notification_${driver.uid}`);
+        localStorage.removeItem(`urgent_${driver.id}`);
+        localStorage.removeItem(`urgent_${driver.uid}`);
+        localStorage.removeItem('pendingDriverNotification');
         
         // Show completion status modal instead of alert
         const fareAmount = ride.final_fare || ride.estimated_fare || 0;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabaseDB } from '../utils/supabaseService';
+import urgentNotificationManager from '../utils/urgentNotificationManager';
 
 const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
   const [confirmedRide, setConfirmedRide] = useState(null);
@@ -8,43 +9,73 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
   const [startingRide, setStartingRide] = useState(false);
   const [notificationState, setNotificationState] = useState('hidden'); // hidden, showing, dismissed
   const [hasShownNotification, setHasShownNotification] = useState(new Set());
+  const [urgentCountdown, setUrgentCountdown] = useState(null);
+  const [isUrgent, setIsUrgent] = useState(false);
   
   // Use ref to track if we've already processed a specific ride
   const processedRides = useRef(new Set());
   const checkInterval = useRef(null);
+  const componentMounted = useRef(true);
   
   const driver = driverData || JSON.parse(localStorage.getItem('driverData') || '{}');
 
   // Enhanced notification check that prevents duplicates and reduces frequency
   useEffect(() => {
     const checkForAcceptedBid = async () => {
-      // Don't check if we're already showing a notification or dismissed recently
+      // Don't check if we're already showing a notification, dismissed recently, or have already processed rides
       if (notificationState !== 'hidden') {
+        return;
+      }
+      
+      // If we've already shown any notification in this session, don't check again
+      if (hasShownNotification.size > 0) {
+        console.log('🔒 OTP notification already shown this session, skipping checks');
         return;
       }
 
       try {
         let rideToShow = null;
+        let urgentNotification = null;
         
-        // Try database first
-        try {
-          const { data: acceptedRides, error } = await supabaseDB.bookings.getAll();
-          
-          if (!error && acceptedRides && acceptedRides.length > 0) {
-            // Find rides confirmed for this driver that we haven't processed yet
-            rideToShow = acceptedRides.find(ride => 
-              (ride.selected_driver_id === driver.id || 
-               ride.selected_driver_id === driver.uid ||
-               ride.driver_id === driver.id ||
-               ride.driver_id === driver.uid) &&
-              ride.status === 'confirmed' &&
-              !ride.started_at && // Not started yet
-              !processedRides.current.has(ride.id) && // Not already processed
-              !hasShownNotification.has(ride.id) // Not already shown
-            );
+        // Check for urgent notifications first
+        const activeUrgentNotifications = urgentNotificationManager.getActiveNotifications();
+        const driverUrgentNotification = activeUrgentNotifications.find(notification => 
+          notification.rideData && 
+          (notification.rideData.driverId === driver.id || notification.rideData.driverId === driver.uid)
+        );
+        
+        if (driverUrgentNotification) {
+          console.log('🚨 URGENT: Processing urgent notification for driver', driver.id);
+          rideToShow = driverUrgentNotification.rideData;
+          urgentNotification = driverUrgentNotification;
+          setIsUrgent(true);
+        }
+        
+        // Fallback: Try database first
+        if (!rideToShow) {
+          try {
+            const { data: acceptedRides, error } = await supabaseDB.bookings.getAll();
+            
+            if (!error && acceptedRides && acceptedRides.length > 0) {
+              // Find rides confirmed for this driver that we haven't processed yet
+              // IMPORTANT: Only show rides that are 'confirmed' and NOT started, completed, or cancelled
+              rideToShow = acceptedRides.find(ride => 
+                (ride.selected_driver_id === driver.id || 
+                 ride.selected_driver_id === driver.uid ||
+                 ride.driver_id === driver.id ||
+                 ride.driver_id === driver.uid) &&
+                ride.status === 'confirmed' &&
+                !ride.started_at && // Not started yet
+                !ride.completed_at && // Not completed
+                ride.status !== 'completed' && // Not marked as completed
+                ride.status !== 'cancelled' && // Not cancelled
+                !processedRides.current.has(ride.id) && // Not already processed
+                !hasShownNotification.has(ride.id) // Not already shown
+              );
+            }
+          } catch (dbError) {
+            console.log('Database check failed, trying localStorage...');
           }
-        } catch (dbError) {
-          console.log('Database check failed, trying localStorage...');
         }
         
         // Only check localStorage if database didn't find anything
@@ -54,18 +85,37 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
           
           const bookingToCheck = confirmedBooking.id ? confirmedBooking : acceptedBooking;
           
+          // Enhanced localStorage check - ensure ride is still active and not completed
           if (bookingToCheck.id && 
               bookingToCheck.selected_driver_id === (driver.id || driver.uid) && 
-              bookingToCheck.status === 'confirmed' && 
+              bookingToCheck.status === 'confirmed' &&
+              !bookingToCheck.started_at && // Not started
+              !bookingToCheck.completed_at && // Not completed
+              bookingToCheck.status !== 'completed' && // Not completed status
+              bookingToCheck.status !== 'in_progress' && // Not in progress
               !processedRides.current.has(bookingToCheck.id) &&
               !hasShownNotification.has(bookingToCheck.id)) {
-            rideToShow = bookingToCheck;
+            
+            // Additional check: verify this ride isn't already completed in localStorage
+            const completedRide = localStorage.getItem(`completed_${bookingToCheck.id}`);
+            const activeRide = localStorage.getItem('activeRide');
+            const activeRideData = activeRide ? JSON.parse(activeRide) : null;
+            
+            // Don't show if ride is completed or already active
+            if (!completedRide && (!activeRideData || activeRideData.id !== bookingToCheck.id)) {
+              rideToShow = bookingToCheck;
+            } else {
+              console.log('🔒 Ride already completed or active, not showing OTP notification');
+              // Mark as processed to prevent future checks
+              processedRides.current.add(bookingToCheck.id);
+              setHasShownNotification(prev => new Set(prev).add(bookingToCheck.id));
+            }
           }
         }
         
         // Only show notification if we found a new ride
         if (rideToShow) {
-          console.log('🎉 New ride confirmation detected:', rideToShow.id);
+          console.log('🎉 New ride confirmation detected:', rideToShow.id, isUrgent ? '(URGENT)' : '');
           
           // Mark this ride as processed and shown permanently
           processedRides.current.add(rideToShow.id);
@@ -80,6 +130,25 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
           
           setConfirmedRide(rideToShow);
           setNotificationState('showing');
+          
+          // Set up urgent countdown if this is an urgent notification
+          if (urgentNotification && urgentNotification.remainingSeconds) {
+            setUrgentCountdown(urgentNotification.remainingSeconds);
+            
+            // Set up countdown updater
+            const countdownInterval = setInterval(() => {
+              const currentNotification = urgentNotificationManager.getNotification(urgentNotification.id);
+              if (currentNotification && currentNotification.remainingSeconds > 0) {
+                setUrgentCountdown(currentNotification.remainingSeconds);
+              } else {
+                clearInterval(countdownInterval);
+                setUrgentCountdown(0);
+              }
+            }, 1000);
+            
+            // Cleanup interval when notification is dismissed
+            setTimeout(() => clearInterval(countdownInterval), urgentNotification.remainingTime);
+          }
           
           // Play notification sound
           try {
@@ -102,25 +171,58 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
         processedRides.current.add(rideId);
         setHasShownNotification(prev => new Set(prev).add(rideId));
       });
+      
+      // Also check for completed rides and mark them as processed
+      const completedRides = JSON.parse(localStorage.getItem('customerRideHistory') || '[]');
+      completedRides.forEach(ride => {
+        if (ride.status === 'completed' && (ride.selected_driver_id === driver.id || ride.selected_driver_id === driver.uid)) {
+          processedRides.current.add(ride.id);
+          setHasShownNotification(prev => new Set(prev).add(ride.id));
+          console.log('🔒 Completed ride found, preventing OTP notification:', ride.id);
+        }
+      });
+      
+      // Check for active rides and mark them as processed
+      const activeRide = localStorage.getItem('activeRide');
+      if (activeRide) {
+        const activeRideData = JSON.parse(activeRide);
+        if (activeRideData.selected_driver_id === driver.id || activeRideData.selected_driver_id === driver.uid) {
+          processedRides.current.add(activeRideData.id);
+          setHasShownNotification(prev => new Set(prev).add(activeRideData.id));
+          console.log('🔒 Active ride found, preventing OTP notification:', activeRideData.id);
+        }
+      }
     };
 
     // Load shown notifications on mount
     loadShownNotifications();
 
-    // Only start checking if we don't have an active notification
-    if (notificationState === 'hidden') {
+    // Only start checking if we don't have an active notification and haven't shown any yet
+    if (notificationState === 'hidden' && hasShownNotification.size === 0) {
       // Initial check
-      setTimeout(checkForAcceptedBid, 1000); // Delay initial check to avoid race conditions
+      setTimeout(checkForAcceptedBid, 500); // Reduced delay for faster response
       
-      // Set up interval with reduced frequency
-      checkInterval.current = setInterval(checkForAcceptedBid, 15000); // Check every 15 seconds
+      // Set up interval with increased frequency for urgent notifications
+      checkInterval.current = setInterval(checkForAcceptedBid, 2000); // Check every 2 seconds (reduced from 3)
     }
+
+    // Listen for urgent notification events
+    const handleUrgentNotification = (event) => {
+      const urgentNotification = event.detail;
+      if (urgentNotification.rideData.driverId === (driver.id || driver.uid)) {
+        console.log('🚨 URGENT: Received urgent notification event', urgentNotification.id);
+        checkForAcceptedBid(); // Immediately check for the urgent notification
+      }
+    };
+    
+    window.addEventListener('urgentNotification', handleUrgentNotification);
 
     return () => {
       if (checkInterval.current) {
         clearInterval(checkInterval.current);
         checkInterval.current = null;
       }
+      window.removeEventListener('urgentNotification', handleUrgentNotification);
     };
   }, [driver.id, driver.uid, notificationState]);
 
@@ -147,10 +249,54 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
       return;
     }
     
-    if (otpInput !== confirmedRide.otp) {
+    // Enhanced OTP debugging
+    console.log('🔐 OTP Verification Debug:');
+    console.log('   Driver Input OTP:', otpInput, '(type:', typeof otpInput, ')');
+    console.log('   Stored Ride OTP:', confirmedRide.otp, '(type:', typeof confirmedRide.otp, ')');
+    console.log('   Ride Data:', {
+      id: confirmedRide.id,
+      otp: confirmedRide.otp,
+      customerName: confirmedRide.customer_name || confirmedRide.customerName
+    });
+    
+    // Normalize both values for comparison
+    const normalizedInput = String(otpInput).trim();
+    const normalizedStored = String(confirmedRide.otp).trim();
+    
+    console.log('   Normalized Input:', normalizedInput);
+    console.log('   Normalized Stored:', normalizedStored);
+    console.log('   Match Result:', normalizedInput === normalizedStored);
+    
+    // Check multiple OTP sources
+    const otpSources = {
+      confirmedRide: confirmedRide.otp,
+      currentRideOTP: localStorage.getItem('currentRideOTP'),
+      rideOTP: localStorage.getItem('rideOTP'),
+      driverOTP: localStorage.getItem(`driver_otp_${confirmedRide.selected_driver_id || confirmedRide.driver_id}`),
+      latestRideOTP: JSON.parse(localStorage.getItem('latestRideOTP') || '{}').otp
+    };
+    
+    console.log('   Available OTP Sources:', otpSources);
+    
+    // Try to find a matching OTP from any source
+    let isValidOTP = false;
+    let matchedSource = null;
+    
+    for (const [source, storedOTP] of Object.entries(otpSources)) {
+      if (storedOTP && String(storedOTP).trim() === normalizedInput) {
+        isValidOTP = true;
+        matchedSource = source;
+        break;
+      }
+    }
+    
+    if (!isValidOTP) {
+      console.log('❌ OTP Verification Failed - No matching OTP found');
       setOtpError('Invalid OTP. Please ask the customer for the correct 4-digit code.');
       return;
     }
+    
+    console.log('✅ OTP Verified successfully from source:', matchedSource);
     
     setStartingRide(true);
     
@@ -180,11 +326,41 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
         localStorage.removeItem('confirmedBooking');
         localStorage.removeItem('acceptedBooking');
         
+        // Clear all related notification data to prevent re-showing
+        localStorage.removeItem(`notification_${driver.id}`);
+        localStorage.removeItem(`notification_${driver.uid}`);
+        localStorage.removeItem(`urgent_${driver.id}`);
+        localStorage.removeItem(`urgent_${driver.uid}`);
+        localStorage.removeItem('pendingDriverNotification');
+        
+        // Mark the ride as processed permanently
+        processedRides.current.add(confirmedRide.id);
+        setHasShownNotification(prev => new Set(prev).add(confirmedRide.id));
+        
+        // Store in permanent shown list to prevent future notifications
+        const shownRides = JSON.parse(localStorage.getItem('shownNotificationRides') || '[]');
+        if (!shownRides.includes(confirmedRide.id)) {
+          shownRides.push(confirmedRide.id);
+          localStorage.setItem('shownNotificationRides', JSON.stringify(shownRides.slice(-50)));
+        }
+        
         rideStarted = true;
         console.log('✅ Ride started in fallback mode');
       }
       
       if (rideStarted) {
+        // Mark urgent notification as responded if it exists
+        const activeUrgentNotifications = urgentNotificationManager.getActiveNotifications();
+        const respondedNotification = activeUrgentNotifications.find(notification => 
+          notification.rideData && 
+          notification.rideData.id === confirmedRide.id
+        );
+        
+        if (respondedNotification) {
+          urgentNotificationManager.markAsResponded(respondedNotification.id);
+          console.log('✅ URGENT: Marked notification as responded', respondedNotification.id);
+        }
+        
         // Show success message
         const successMessage = `🎉 Ride Started Successfully!\n\nCustomer: ${confirmedRide.customer_name || confirmedRide.customerName}\nDestination: ${confirmedRide.drop_address || confirmedRide.drop}`;
         
@@ -193,6 +369,8 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
         setConfirmedRide(null);
         setOtpInput('');
         setOtpError('');
+        setUrgentCountdown(null);
+        setIsUrgent(false);
         
         // Notify parent component
         if (onRideConfirmed) {
@@ -230,6 +408,13 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
         localStorage.setItem('shownNotificationRides', JSON.stringify(shownRides.slice(-50)));
       }
       
+      // Stop the notification checking interval to prevent further popups
+      if (checkInterval.current) {
+        clearInterval(checkInterval.current);
+        checkInterval.current = null;
+        console.log('🔒 OTP notification dismissed - stopping further checks');
+      }
+      
       // Also remove from active booking data to prevent re-showing
       localStorage.removeItem('acceptedBooking');
       localStorage.removeItem('confirmedBooking');
@@ -243,7 +428,7 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
     // Reset to hidden state after a short delay
     setTimeout(() => {
       setNotificationState('hidden');
-    }, 1000);
+    }, 300); // Reduced from 1000ms for faster response
   };
 
   // Don't render if notification should be hidden
@@ -252,18 +437,23 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
   }
 
   return (
-    <div className="enhanced-notification-overlay">
-      <div className="enhanced-notification-modal">
+    <div className="enhanced-notification-overlay dark-theme">
+      <div className="enhanced-notification-modal dark-modal">
         {/* Header */}
-        <div className="notification-header">
-          <div className="success-icon">🎉</div>
-          <h2>Ride Confirmed!</h2>
-          <p>Customer accepted your bid</p>
+        <div className={`notification-header ${isUrgent ? 'urgent' : ''} dark-header`}>
+          <div className="success-icon">{isUrgent ? '🚨' : '🎉'}</div>
+          <h2>{isUrgent ? 'URGENT RIDE!' : 'Ride Confirmed!'}</h2>
+          <p>{isUrgent ? 'Customer needs immediate pickup' : 'Customer accepted your bid'}</p>
+          {urgentCountdown !== null && urgentCountdown > 0 && (
+            <div className="urgent-countdown">
+              ⏰ Respond in {urgentCountdown}s
+            </div>
+          )}
           <div className="ride-id">Ride ID: {confirmedRide.id?.slice(-8) || 'N/A'}</div>
         </div>
 
         {/* Ride Details */}
-        <div className="ride-details">
+        <div className="ride-details dark-details">
           <div className="customer-info">
             <h3>👤 {confirmedRide.customer_name || confirmedRide.customerName || 'Customer'}</h3>
             {(confirmedRide.customer_phone || confirmedRide.customerPhone) && (
@@ -298,7 +488,7 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
         </div>
 
         {/* OTP Section */}
-        <div className="otp-section">
+        <div className="otp-section dark-otp">
           <h3>🔐 Enter Customer's OTP</h3>
           <p className="otp-instruction">Ask the customer for their 4-digit OTP code to start the ride</p>
           
@@ -347,305 +537,7 @@ const EnhancedOTPNotification = ({ driverData, onRideConfirmed }) => {
         </div>
       </div>
       
-      {/* Enhanced Styles */}
-      <style jsx>{`
-        .enhanced-notification-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.85);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 10000;
-          animation: fadeIn 0.3s ease-out;
-          backdrop-filter: blur(4px);
-        }
-
-        .enhanced-notification-modal {
-          background: white;
-          border-radius: 20px;
-          padding: 32px;
-          max-width: 480px;
-          width: 90%;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
-          animation: slideIn 0.3s ease-out;
-          border: 2px solid #10b981;
-        }
-
-        .notification-header {
-          text-align: center;
-          margin-bottom: 28px;
-        }
-
-        .success-icon {
-          font-size: 4rem;
-          margin-bottom: 12px;
-          animation: bounce 0.6s ease-out;
-        }
-
-        .notification-header h2 {
-          color: #10b981;
-          margin: 0 0 8px 0;
-          font-size: 2rem;
-          font-weight: 700;
-        }
-
-        .notification-header p {
-          color: #6b7280;
-          margin: 0 0 8px 0;
-          font-size: 1.1rem;
-        }
-
-        .ride-id {
-          font-size: 0.9rem;
-          color: #9ca3af;
-          font-family: monospace;
-          background: #f9fafb;
-          padding: 4px 12px;
-          border-radius: 20px;
-          display: inline-block;
-        }
-
-        .ride-details {
-          background: linear-gradient(135deg, #f9fafb, #f3f4f6);
-          border-radius: 16px;
-          padding: 24px;
-          margin-bottom: 28px;
-          border: 1px solid #e5e7eb;
-        }
-
-        .customer-info h3 {
-          color: #1f2937;
-          margin: 0 0 8px 0;
-          font-size: 1.3rem;
-        }
-
-        .phone-link {
-          color: #3b82f6;
-          text-decoration: none;
-          font-weight: 500;
-          padding: 4px 8px;
-          border-radius: 8px;
-          background: #eff6ff;
-          display: inline-block;
-          transition: all 0.2s ease;
-        }
-
-        .phone-link:hover {
-          background: #dbeafe;
-          transform: translateY(-1px);
-        }
-
-        .route-info {
-          margin: 20px 0;
-        }
-
-        .route-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-          margin: 12px 0;
-        }
-
-        .route-item .icon {
-          font-size: 1.4rem;
-          margin-top: 4px;
-        }
-
-        .route-item .label {
-          font-size: 0.9rem;
-          color: #6b7280;
-          margin-bottom: 6px;
-          font-weight: 500;
-        }
-
-        .route-item .address {
-          font-weight: 600;
-          color: #1f2937;
-          line-height: 1.3;
-        }
-
-        .route-arrow {
-          text-align: center;
-          color: #10b981;
-          margin: 8px 0;
-          font-size: 1.4rem;
-          font-weight: bold;
-        }
-
-        .fare-info {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 20px;
-          padding-top: 20px;
-          border-top: 2px solid #e5e7eb;
-        }
-
-        .fare-info .label {
-          color: #6b7280;
-          font-weight: 500;
-          font-size: 1.1rem;
-        }
-
-        .fare-info .amount {
-          font-size: 1.8rem;
-          font-weight: 800;
-          color: #10b981;
-        }
-
-        .otp-section {
-          background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-          border: 3px solid #0ea5e9;
-          border-radius: 16px;
-          padding: 24px;
-          margin-bottom: 28px;
-          text-align: center;
-        }
-
-        .otp-section h3 {
-          color: #0369a1;
-          margin: 0 0 8px 0;
-          font-size: 1.4rem;
-          font-weight: 700;
-        }
-
-        .otp-instruction {
-          color: #0369a1;
-          font-size: 1rem;
-          margin: 0 0 20px 0;
-          font-weight: 500;
-        }
-
-        .otp-input-container {
-          margin-bottom: 16px;
-        }
-
-        .otp-input {
-          width: 200px;
-          padding: 16px 20px;
-          border: 3px solid #cbd5e1;
-          border-radius: 12px;
-          font-size: 2rem;
-          font-weight: 700;
-          text-align: center;
-          letter-spacing: 8px;
-          background: white;
-          transition: all 0.2s ease;
-        }
-
-        .otp-input:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-          transform: scale(1.02);
-        }
-
-        .otp-input.error {
-          border-color: #dc2626;
-          background-color: #fef2f2;
-        }
-
-        .otp-error {
-          color: #dc2626;
-          font-size: 0.9rem;
-          margin-top: 8px;
-          font-weight: 600;
-          background: #fef2f2;
-          padding: 8px 12px;
-          border-radius: 8px;
-        }
-
-        .notification-actions {
-          display: flex;
-          gap: 16px;
-          justify-content: center;
-        }
-
-        .start-ride-btn {
-          background: linear-gradient(135deg, #10b981, #059669);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          padding: 16px 32px;
-          font-weight: 700;
-          font-size: 1.1rem;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-        }
-
-        .start-ride-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-
-        .start-ride-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .dismiss-btn {
-          background: #6b7280;
-          color: white;
-          border: none;
-          border-radius: 12px;
-          padding: 16px 24px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .dismiss-btn:hover:not(:disabled) {
-          background: #4b5563;
-          transform: translateY(-1px);
-        }
-
-        .dismiss-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes slideIn {
-          from { 
-            opacity: 0;
-            transform: translateY(-30px) scale(0.9);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes bounce {
-          0%, 20%, 53%, 80%, 100% {
-            transform: translateY(0);
-          }
-          40%, 43% {
-            transform: translateY(-10px);
-          }
-          70% {
-            transform: translateY(-5px);
-          }
-          90% {
-            transform: translateY(-2px);
-          }
-        }
-      `}</style>
+      {/* Enhanced Styles are now in App.css for proper dark theme support */}
     </div>
   );
 };

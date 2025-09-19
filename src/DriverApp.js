@@ -27,7 +27,7 @@ const driverLogout = () => {
 };
 
 // Driver Navigation Bar Component
-const DriverNavigationBar = ({ driver, handleLogout, isMenuOpen, toggleMenu, theme, setTheme }) => {
+const DriverNavigationBar = ({ driver, handleLogout, isMenuOpen, toggleMenu }) => {
   const location = useLocation().pathname;
   const navigate = useNavigate();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -40,11 +40,6 @@ const DriverNavigationBar = ({ driver, handleLogout, isMenuOpen, toggleMenu, the
     if (isMenuOpen) {
       toggleMenu(); // Close mobile menu after selection
     }
-  };
-  
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
   };
   
   const toggleAccountMenu = () => {
@@ -112,15 +107,6 @@ const DriverNavigationBar = ({ driver, handleLogout, isMenuOpen, toggleMenu, the
               📊 History
             </Link>
           </li>
-          <li>
-            <button 
-              className="menubar-theme-toggle" 
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
-          </li>
           <li className="account-menu-container">
             <button 
               className="menubar-account" 
@@ -165,7 +151,6 @@ function DriverApp({ ReverseGeocode }) {
   
   // UI state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   
   // Handle driver login
   const handleDriverLogin = (driverData) => {
@@ -196,13 +181,12 @@ function DriverApp({ ReverseGeocode }) {
       setAuthLoading(false);
     };
     
+    // Force dark theme for driver mode
+    document.body.className = 'dark driver-mode';
+    document.documentElement.setAttribute('data-theme', 'dark');
+    
     checkDriverAuth();
   }, []);
-
-  useEffect(() => {
-    document.body.className = `${theme} driver-mode`;
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   // Show loading while checking authentication
   if (authLoading) {
@@ -223,8 +207,6 @@ function DriverApp({ ReverseGeocode }) {
             handleLogout={handleDriverLogout}
             isMenuOpen={isMenuOpen}
             toggleMenu={toggleMenu}
-            theme={theme}
-            setTheme={setTheme}
           />
         )}
         

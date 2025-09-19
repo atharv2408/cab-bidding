@@ -1,0 +1,601 @@
+/* Car Loading Animation Styles - Premium Black Theme */
+
+.car-loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #000000 0%, #111111 50%, #000000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.car-loading-container.light {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%);
+}
+
+.car-loading-content {
+  text-align: center;
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  padding: 40px 20px;
+}
+
+/* Road Animation */
+.road {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: linear-gradient(to right, #333333, #444444, #333333);
+  border-radius: 10px;
+  margin-bottom: 60px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.car-loading-container.light .road {
+  background: linear-gradient(to right, #64748b, #475569, #64748b);
+}
+
+.road-line {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 3px;
+  background: #ffffff;
+  border-radius: 2px;
+  animation: roadMoving 1.5s linear infinite;
+}
+
+.car-loading-container.light .road-line {
+  background: #ffffff;
+}
+
+.road-line:nth-child(1) { left: -40px; animation-delay: 0s; }
+.road-line:nth-child(2) { left: -40px; animation-delay: 0.5s; }
+.road-line:nth-child(3) { left: -40px; animation-delay: 1s; }
+
+@keyframes roadMoving {
+  0% { left: -40px; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+/* Car Animation */
+.car-animation-wrapper {
+  position: relative;
+  margin-bottom: 40px;
+  height: 120px;
+}
+
+.car {
+  position: relative;
+  margin: 0 auto;
+  width: 120px;
+  height: 60px;
+  animation: carBounce 2s ease-in-out infinite;
+}
+
+@keyframes carBounce {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Car Body */
+.car-body {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  z-index: 2;
+}
+
+.car-main {
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 20px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+.car-top {
+  position: absolute;
+  bottom: 15px;
+  left: 30px;
+  right: 30px;
+  height: 25px;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  border-radius: 12px 12px 4px 4px;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+}
+
+.car-windshield {
+  position: absolute;
+  bottom: 18px;
+  left: 35px;
+  right: 35px;
+  height: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px 8px 2px 2px;
+  backdrop-filter: blur(2px);
+}
+
+/* Car Lights */
+.car-lights {
+  position: relative;
+}
+
+.headlight {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #fbbf24;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #fbbf24;
+  animation: headlightBlink 2s infinite;
+}
+
+.taillight {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ef4444;
+  animation: taillightBlink 2s infinite alternate;
+}
+
+@keyframes headlightBlink {
+  0%, 90% { opacity: 1; }
+  95% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+@keyframes taillightBlink {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* Car Wheels */
+.car-wheels {
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  right: 0;
+}
+
+.wheel {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #1f2937, #374151);
+  border-radius: 50%;
+  border: 2px solid #6b7280;
+  animation: wheelSpin 0.5s linear infinite;
+}
+
+.front-wheel {
+  right: 15px;
+}
+
+.rear-wheel {
+  left: 15px;
+}
+
+.wheel-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: #9ca3af;
+  border-radius: 50%;
+}
+
+@keyframes wheelSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Car Shadow */
+.car-shadow {
+  position: absolute;
+  bottom: -25px;
+  left: 10px;
+  right: 10px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  animation: shadowPulse 2s ease-in-out infinite;
+}
+
+@keyframes shadowPulse {
+  0%, 100% { transform: scaleX(1); opacity: 0.3; }
+  50% { transform: scaleX(1.1); opacity: 0.5; }
+}
+
+/* Exhaust Smoke */
+.exhaust-smoke {
+  position: absolute;
+  bottom: 25px;
+  left: 10px;
+  width: 20px;
+  height: 30px;
+}
+
+.smoke-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: smokeRise 2s infinite;
+}
+
+.smoke-particle:nth-child(1) {
+  left: 0;
+  animation-delay: 0s;
+}
+
+.smoke-particle:nth-child(2) {
+  left: 7px;
+  animation-delay: 0.7s;
+}
+
+.smoke-particle:nth-child(3) {
+  left: 14px;
+  animation-delay: 1.4s;
+}
+
+@keyframes smokeRise {
+  0% {
+    bottom: 0;
+    opacity: 0.8;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  100% {
+    bottom: 30px;
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* Speed Lines */
+.speed-lines {
+  position: absolute;
+  top: 20px;
+  right: 0;
+  width: 60px;
+  height: 40px;
+}
+
+.speed-line {
+  position: absolute;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.6));
+  animation: speedLine 1s linear infinite;
+}
+
+.speed-line:nth-child(1) {
+  top: 5px;
+  width: 30px;
+  animation-delay: 0s;
+}
+
+.speed-line:nth-child(2) {
+  top: 15px;
+  width: 25px;
+  animation-delay: 0.2s;
+}
+
+.speed-line:nth-child(3) {
+  top: 25px;
+  width: 35px;
+  animation-delay: 0.4s;
+}
+
+.speed-line:nth-child(4) {
+  top: 35px;
+  width: 20px;
+  animation-delay: 0.6s;
+}
+
+@keyframes speedLine {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+}
+
+/* Loading Progress */
+.loading-progress {
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+
+.car-loading-container.light .progress-bar {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
+  background-size: 200% 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  animation: progressShimmer 2s ease-in-out infinite;
+}
+
+@keyframes progressShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.progress-percentage {
+  position: absolute;
+  top: -25px;
+  right: 0;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 8px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.car-loading-container.light .progress-percentage {
+  color: #1f2937;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Progress Dots */
+.progress-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: dotPulse 1.5s infinite;
+}
+
+.car-loading-container.light .dot {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dot:nth-child(1) { animation-delay: 0s; }
+.dot:nth-child(2) { animation-delay: 0.3s; }
+.dot:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes dotPulse {
+  0%, 60%, 100% {
+    transform: scale(1);
+    background: rgba(255, 255, 255, 0.3);
+  }
+  30% {
+    transform: scale(1.4);
+    background: #3b82f6;
+  }
+}
+
+/* Loading Message */
+.loading-message {
+  animation: fadeInUp 0.8s ease-out 0.5s both;
+}
+
+.loading-message h3 {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.car-loading-container.light .loading-message h3 {
+  color: #1f2937;
+}
+
+.loading-message p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.car-loading-container.light .loading-message p {
+  color: rgba(31, 41, 55, 0.7);
+}
+
+/* Floating Icons */
+.floating-icons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.icon-wrapper {
+  position: absolute;
+  animation: floatAround 8s linear infinite;
+}
+
+.floating-icon {
+  font-size: 1.5rem;
+  opacity: 0.4;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+.icon-wrapper:nth-child(1) {
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.icon-wrapper:nth-child(2) {
+  top: 20%;
+  right: 15%;
+  animation-delay: 2s;
+}
+
+.icon-wrapper:nth-child(3) {
+  bottom: 30%;
+  left: 20%;
+  animation-delay: 4s;
+}
+
+.icon-wrapper:nth-child(4) {
+  bottom: 20%;
+  right: 10%;
+  animation-delay: 6s;
+}
+
+@keyframes floatAround {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(10px, -10px); }
+  50% { transform: translate(-5px, -20px); }
+  75% { transform: translate(-10px, 5px); }
+}
+
+@keyframes iconPulse {
+  0%, 100% { 
+    opacity: 0.4; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.1);
+  }
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .car-loading-content {
+    padding: 20px 15px;
+    max-width: 90%;
+  }
+  
+  .car {
+    width: 100px;
+    height: 50px;
+  }
+  
+  .car-animation-wrapper {
+    height: 100px;
+    margin-bottom: 30px;
+  }
+  
+  .floating-icon {
+    font-size: 1.2rem;
+  }
+  
+  .loading-message h3 {
+    font-size: 1.2rem;
+  }
+  
+  .loading-message p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .car-loading-content {
+    padding: 15px 10px;
+  }
+  
+  .car {
+    width: 80px;
+    height: 40px;
+  }
+  
+  .loading-message h3 {
+    font-size: 1.1rem;
+  }
+  
+  .progress-bar {
+    height: 4px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .car,
+  .wheel,
+  .smoke-particle,
+  .speed-line,
+  .progress-fill,
+  .dot,
+  .icon-wrapper {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  
+  .car-loading-container {
+    animation: none;
+  }
+}

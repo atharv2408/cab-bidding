@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { customAuth } from '../utils/customAuth';
 import '../styles/CustomerAuth.css';
+import CarLoadingAnimation from './CarLoadingAnimation';
 
 const CustomerAuth = ({ onLogin, onClose, onDriverLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -247,7 +248,16 @@ const CustomerAuth = ({ onLogin, onClose, onDriverLogin }) => {
   };
 
   return (
-    <div className="customer-auth-overlay">
+    <>
+      {/* Car Loading Animation */}
+      {(loading || autoLoading) && (
+        <CarLoadingAnimation 
+          type={isLogin ? "login" : "register"} 
+          darkMode={true}
+        />
+      )}
+      
+      <div className="customer-auth-overlay">
       <div className="customer-auth-modal">
         <div className="auth-header">
           <h2>🚕 {isLogin ? 'Login to BidCab' : 'Join BidCab'}</h2>
@@ -412,6 +422,7 @@ const CustomerAuth = ({ onLogin, onClose, onDriverLogin }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

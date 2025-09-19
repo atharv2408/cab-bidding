@@ -32,7 +32,7 @@ function Bid({ appState }) {
         if (prev <= 1) {
           setBiddingActive(false);
           setSelectionTime(true);
-          setSelectionTimer(15);
+          setSelectionTimer(10); // Reduced from 15 seconds to 10 seconds for urgency
           return 0;
         }
         return prev - 1;
@@ -151,8 +151,8 @@ function Bid({ appState }) {
     // Load bids immediately
     loadBids();
     
-    // Continue polling for new bids every 3 seconds
-    const interval = setInterval(loadBids, 3000);
+    // Continue polling for new bids every 2 seconds (reduced from 3 for faster updates)
+    const interval = setInterval(loadBids, 2000);
     
     return () => clearInterval(interval);
   }, [biddingActive, setBids]);

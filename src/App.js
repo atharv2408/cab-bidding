@@ -61,8 +61,8 @@ const ReverseGeocode = async (lat, lon) => {
   }
 };
 
-// Navigation Bar Component
-const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setTheme }) => {
+// ... existing code ...
+const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu }) => {
   const location = useLocation().pathname;
   const navigate = useNavigate();
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -75,11 +75,6 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setT
     if (isMenuOpen) {
       toggleMenu(); // Close mobile menu after selection
     }
-  };
-  
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
   };
   
   const toggleAccountMenu = () => {
@@ -140,15 +135,6 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu, theme, setT
             >
               🚗 Ride Confirm
             </Link>
-          </li>
-          <li>
-            <button 
-              className="menubar-theme-toggle" 
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
           </li>
           <li className="account-menu-container">
             <button 
@@ -264,7 +250,6 @@ function CustomerApp() {
   const [selectionTime, setSelectionTime] = useState(false);
   const [timer, setTimer] = useState(60);
   const [selectionTimer, setSelectionTimer] = useState(15);
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [suggestedPrice, setSuggestedPrice] = useState('');
   const [useSuggestedPrice, setUseSuggestedPrice] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -314,13 +299,12 @@ function CustomerApp() {
       setAuthLoading(false);
     };
     
+    // Force dark theme on app load
+    document.body.className = 'dark';
+    document.documentElement.setAttribute('data-theme', 'dark');
+    
     checkAuth();
   }, []);
-
-  useEffect(() => {
-    document.body.className = theme;
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   // App state and functions that will be passed to child components
   const appState = {
@@ -340,8 +324,6 @@ function CustomerApp() {
     setTimer,
     selectionTimer,
     setSelectionTimer,
-    theme,
-    setTheme,
     suggestedPrice,
     setSuggestedPrice,
     useSuggestedPrice,
@@ -379,8 +361,6 @@ function CustomerApp() {
             handleLogout={handleLogout}
             isMenuOpen={isMenuOpen}
             toggleMenu={toggleMenu}
-            theme={theme}
-            setTheme={setTheme}
           />
           
           {/* Add Ride Status Monitor for real-time completion updates */}

@@ -187,6 +187,15 @@ const Home = ({ appState }) => {
 
   return (
     <div className="home-page">
+      {/* Hero Section */}
+      <div className="hero-section">
+        <h1 className="hero-title">🚕 BidCab</h1>
+        <p className="hero-subtitle">
+          Get the best ride deals with competitive bidding. 
+          Set your destination and let drivers compete for your ride!
+        </p>
+      </div>
+
       {/* Location error display */}
       {locationError && (
         <div className="location-error-display">
@@ -195,55 +204,59 @@ const Home = ({ appState }) => {
         </div>
       )}
 
-      <div className="pickup-input-container">
-        <label>Pickup Location</label>
-        <div className="input-with-icon">
-          <input
-            type="text"
-            value={pickup.address}
-            onChange={e => setPickup({ ...pickup, address: e.target.value })}
-            onBlur={() => geocodeAddress(pickup.address, setPickup)}
-            placeholder="Enter pickup location or click location icon"
-            className="location-input"
-          />
-          <button
-            type="button"
-            className="location-detect-icon"
-            onClick={detectLocation}
-            disabled={locationLoading}
-            title="Detect my current location"
-          >
-            {locationLoading ? (
-              <span className="detect-icon spinning">⟳</span>
-            ) : (
-              <span className="detect-icon">➤</span>
-            )}
-          </button>
+      {/* Location Input Section */}
+      <div className="location-section">
+        <div className="pickup-input-container location-input-container">
+          <label>Pickup Location</label>
+          <div className="input-with-icon">
+            <input
+              type="text"
+              value={pickup.address}
+              onChange={e => setPickup({ ...pickup, address: e.target.value })}
+              onBlur={() => geocodeAddress(pickup.address, setPickup)}
+              placeholder="Enter pickup location or detect current location"
+              className="location-input form-input"
+            />
+            <button
+              type="button"
+              className="location-detect-icon btn btn-primary"
+              onClick={detectLocation}
+              disabled={locationLoading}
+              title="Detect my current location"
+            >
+              {locationLoading ? (
+                <span className="detect-icon animate-spin">⟳</span>
+              ) : (
+                <span className="detect-icon">📍</span>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
-      
-      <div className="drop-input-container">
-        <label>Drop Location</label>
-        <div className="input-with-icon">
-          <input
-            value={drop.address}
-            onChange={(e) => setDrop({ ...drop, address: e.target.value })}
-            onBlur={() => geocodeAddress(drop.address, setDrop)}
-            placeholder="Type address or click on map"
-            className="location-input"
-          />
+        
+        <div className="drop-input-container location-input-container">
+          <label>Drop Location</label>
+          <div className="input-with-icon">
+            <input
+              value={drop.address}
+              onChange={(e) => setDrop({ ...drop, address: e.target.value })}
+              onBlur={() => geocodeAddress(drop.address, setDrop)}
+              placeholder="Enter your destination"
+              className="location-input form-input"
+            />
+          </div>
         </div>
       </div>
 
-      <div style={{ margin: '10px 0' }}>
-        <label>
+      {/* Price Suggestion Section */}
+      <div className="price-suggestion card">
+        <label className="checkbox-wrapper">
           <input
             type="checkbox"
             checked={useSuggestedPrice}
             onChange={e => setUseSuggestedPrice(e.target.checked)}
-            style={{ marginRight: 6 }}
+            className="checkbox-input"
           />
-          Suggest a Price
+          <span className="checkbox-label">💰 Suggest Your Own Price</span>
         </label>
         {useSuggestedPrice && (
           <input
@@ -251,13 +264,13 @@ const Home = ({ appState }) => {
             min="0"
             value={suggestedPrice}
             onChange={e => setSuggestedPrice(e.target.value)}
-            placeholder="Enter suggested price in ₹"
-            style={{ width: 120, marginLeft: 10 }}
+            placeholder="Enter price in ₹"
+            className="form-input"
           />
         )}
       </div>
 
-      {/* Use PreciseLocationMap component for exact location detection */}
+      {/* Map Container */}
       <PreciseLocationMap
         pickup={pickup}
         setPickup={setPickup}
@@ -265,8 +278,6 @@ const Home = ({ appState }) => {
         setDrop={setDrop}
         onLocationDetected={(locationData) => {
           console.log('Precise location detected:', locationData);
-          // The component already handles setting pickup location
-          // This callback can be used for additional actions if needed
         }}
         onLocationError={(error) => {
           setLocationError(error);
@@ -277,11 +288,14 @@ const Home = ({ appState }) => {
         height="400px"
       />
 
+      {/* Start Bidding Section */}
       <div className="start-bidding-section">
-        <button onClick={startBidding} className="start-bidding-btn">
+        <button onClick={startBidding} className="start-bidding-btn btn btn-xl">
           <span className="btn-icon">🚕</span>
-          <span className="btn-text">Find My Bid</span>
-          <span className="btn-subtitle">Get competitive offers</span>
+          <div>
+            <div className="btn-text">Find My Ride</div>
+            <div className="btn-subtitle">Get competitive offers</div>
+          </div>
         </button>
       </div>
     </div>

@@ -125,7 +125,7 @@ class OTPManager {
   // Cleanup old OTPs
   cleanup() {
     const now = Date.now();
-    const maxAge = 30 * 60 * 1000; // 30 minutes
+    const maxAge = 10 * 60 * 1000; // 10 minutes (reduced from 30 for urgency)
 
     // Remove old active OTPs
     for (const [bookingId, otpData] of this.activeOTPs.entries()) {
@@ -153,6 +153,6 @@ const otpManager = new OTPManager();
 // Setup cleanup interval
 setInterval(() => {
   otpManager.cleanup();
-}, 5 * 60 * 1000); // Clean every 5 minutes
+}, 2 * 60 * 1000); // Clean every 2 minutes (reduced from 5 for faster cleanup)
 
 export default otpManager;

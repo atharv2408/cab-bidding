@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabaseAuth, supabaseDB } from '../utils/supabaseService';
+import CarLoadingAnimation from './CarLoadingAnimation';
 
 const DriverLogin = ({ onLogin }) => {
   const { t } = useTranslation();
@@ -205,7 +206,16 @@ const DriverLogin = ({ onLogin }) => {
   };
 
   return (
-    <div className="driver-login-container">
+    <>
+      {/* Car Loading Animation */}
+      {loading && (
+        <CarLoadingAnimation 
+          type={isLogin ? "driver-login" : "driver-register"} 
+          darkMode={true}
+        />
+      )}
+      
+      <div className="driver-login-container">
       <div className="driver-login-card">
         <div className="driver-login-header">
           <h2>🚗 Driver {isLogin ? 'Login' : 'Registration'}</h2>
@@ -371,6 +381,7 @@ const DriverLogin = ({ onLogin }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

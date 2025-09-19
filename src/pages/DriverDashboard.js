@@ -22,6 +22,57 @@ const DriverDashboard = ({ driverData }) => {
       return;
     }
 
+    // Clean up completed ride notifications to prevent OTP popups
+    const cleanupCompletedRideNotifications = () => {
+      try {
+        // Check for completed rides and mark them as processed
+        const completedRides = JSON.parse(localStorage.getItem('customerRideHistory') || '[]');
+        const driverRideHistory = JSON.parse(localStorage.getItem('driverRideHistory') || '[]');
+        const allCompletedRides = [...completedRides, ...driverRideHistory];
+        
+        // Get existing shown notifications list
+        const shownRides = JSON.parse(localStorage.getItem('shownNotificationRides') || '[]');
+        let updated = false;
+        
+        allCompletedRides.forEach(ride => {
+          if ((ride.status === 'completed' || ride.completed_at) && 
+              (ride.selected_driver_id === driver.id || ride.selected_driver_id === driver.uid) &&
+              !shownRides.includes(ride.id)) {
+            shownRides.push(ride.id);
+            updated = true;
+            console.log('🔒 Marked completed ride to prevent OTP notifications:', ride.id);
+          }
+        });
+        
+        // Check for active ride and mark to prevent OTP notifications
+        const activeRide = localStorage.getItem('activeRide');
+        if (activeRide) {
+          const activeRideData = JSON.parse(activeRide);
+          if ((activeRideData.selected_driver_id === driver.id || activeRideData.selected_driver_id === driver.uid) &&
+              !shownRides.includes(activeRideData.id)) {
+            shownRides.push(activeRideData.id);
+            updated = true;
+            console.log('🔒 Marked active ride to prevent OTP notifications:', activeRideData.id);
+          }
+        }
+        
+        if (updated) {
+          localStorage.setItem('shownNotificationRides', JSON.stringify(shownRides.slice(-50)));
+        }
+        
+        // Clear any stale notification data
+        localStorage.removeItem('pendingDriverNotification');
+        localStorage.removeItem(`notification_${driver.id}`);
+        localStorage.removeItem(`notification_${driver.uid}`);
+        
+      } catch (error) {
+        console.warn('Warning: Failed to cleanup completed ride notifications:', error);
+      }
+    };
+    
+    // Run cleanup immediately
+    cleanupCompletedRideNotifications();
+
     // Load available rides - try database first, fallback to localStorage with deduplication
     const loadRides = async () => {
       try {
@@ -130,10 +181,10 @@ const DriverDashboard = ({ driverData }) => {
 
     loadRides();
 
-    // Set up a refresh interval to check for new ride requests (less frequent to avoid spam)
+    // Set up a refresh interval to check for new ride requests (increased frequency for responsiveness)
     const refreshInterval = setInterval(() => {
       loadRides();
-    }, 10000); // Refresh every 10 seconds to reduce duplicate checks
+    }, 5000); // Refresh every 5 seconds (reduced from 10) for faster ride updates
 
     // Set up a cleanup interval to remove expired rides
     const cleanupInterval = setInterval(() => {

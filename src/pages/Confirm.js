@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { database } from '../utils/database';
 import { createApiUrl, API_ENDPOINTS } from '../config/api';
 import otpManager from '../utils/otpManager';
+import urgentNotificationManager from '../utils/urgentNotificationManager';
 
 function Confirm({ appState }) {
   const navigate = useNavigate();
@@ -10,6 +11,16 @@ function Confirm({ appState }) {
   const [driverDetails, setDriverDetails] = useState(null);
   const [estimatedArrival, setEstimatedArrival] = useState('');
   const [bookingId, setBookingId] = useState('');
+
+  // Apply dark theme to body when component mounts
+  useEffect(() => {
+    document.body.classList.add('dark');
+    
+    return () => {
+      // Keep dark theme when unmounting since it's the default for the entire app
+      // document.body.classList.remove('dark');
+    };
+  }, []);
 
   // Generate OTP and get driver details when component mounts
   useEffect(() => {
@@ -136,8 +147,31 @@ function Confirm({ appState }) {
         }));
         
         console.log('🔐 Customer OTP stored for driver verification:', rideOTP);
+        console.log('🔐 OTP Storage Debug:', {
+          currentRideOTP: localStorage.getItem('currentRideOTP'),
+          rideOTP: localStorage.getItem('rideOTP'),
+          driverSpecificOTP: localStorage.getItem(`driver_otp_${selectedBid.driver_id}`),
+          latestRideOTP: localStorage.getItem('latestRideOTP')
+        });
         
-        // Trigger immediate notification to driver
+        // Create urgent notification for driver with reduced timeout
+        const urgentRideData = {
+          id: bookingId,
+          driverId: selectedBid.driver_id,
+          otp: rideOTP,
+          customerName: user?.name || 'Customer',
+          pickup: pickup.address,
+          drop: drop.address,
+          fare: selectedBid.price,
+          distance: selectedBid.distance,
+          eta: selectedBid.eta,
+          timestamp: Date.now()
+        };
+        
+        // Create urgent OTP notification with 45-second timeout
+        const urgentNotification = urgentNotificationManager.createUrgentOTPNotification(urgentRideData);
+        
+        // Legacy notification system for backward compatibility
         const driverNotification = {
           type: 'RIDE_ACCEPTED',
           driverId: selectedBid.driver_id,
@@ -147,18 +181,28 @@ function Confirm({ appState }) {
           customerName: user?.name || 'Customer',
           pickup: pickup.address,
           drop: drop.address,
-          fare: selectedBid.price
+          fare: selectedBid.price,
+          urgent: true,
+          urgentNotificationId: urgentNotification.id
         };
         
         // Store notification for immediate driver pickup
         localStorage.setItem('pendingDriverNotification', JSON.stringify(driverNotification));
         localStorage.setItem(`notification_${selectedBid.driver_id}`, JSON.stringify(driverNotification));
+        localStorage.setItem(`urgent_${selectedBid.driver_id}`, JSON.stringify(urgentNotification));
         
         // Trigger a storage event to notify other tabs/windows
         window.dispatchEvent(new StorageEvent('storage', {
           key: 'pendingDriverNotification',
           newValue: JSON.stringify(driverNotification)
         }));
+        
+        // Dispatch urgent notification event
+        window.dispatchEvent(new CustomEvent('urgentNotification', {
+          detail: urgentNotification
+        }));
+        
+        console.log('🚨 URGENT: Driver notification created with 45s timeout for ride', bookingId);
         
         console.log('✅ Booking saved in fallback mode:', bookingId);
         bookingSaved = true;
@@ -203,11 +247,11 @@ function Confirm({ appState }) {
   }
 
   return (
-    <div className="container">
+    <div className="container dark-theme">
       {/* Enhanced Confirmation Card */}
-      <div className="ride-confirmation-card enhanced">
+      <div className="ride-confirmation-card enhanced dark-card">
         {/* Booking Header */}
-        <div className="confirmation-header">
+        <div className="confirmation-header dark-header">
           <div className="booking-status">
             <div className="status-icon">✅</div>
             <div className="status-text">
