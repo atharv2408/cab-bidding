@@ -181,7 +181,7 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu }) => {
 function App() {
   console.log('🏗️ App component rendered');
   return (
-    <Router>
+    <Router basename="/cab-bidding">
       <AppContent />
     </Router>
   );
