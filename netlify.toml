@@ -6,22 +6,36 @@
   # Default build command.
   command = "npm run build"
 
+# Static assets with highest priority (force = true)
 [[redirects]]
-  from = "/static/*"
-  to = "/static/:splat"
+  from = "/static/css/*"
+  to = "/static/css/:splat"
   status = 200
+  force = true
 
+[[redirects]]
+  from = "/static/js/*"
+  to = "/static/js/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/static/media/*"
+  to = "/static/media/:splat"
+  status = 200
+  force = true
+
+# Driver portal routes
 [[redirects]]
   from = "/driver/*"
   to = "/index.html"
   status = 200
-  force = false
 
+# All other routes (fallback)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
 
 [[headers]]
   # Define which paths this specific [[headers]] block will cover.
@@ -33,13 +47,27 @@
     Cache-Control = "public, max-age=31536000"
 
 [[headers]]
+  for = "/static/css/*"
+    [headers.values]
+    Content-Type = "text/css"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/static/js/*"
+    [headers.values]
+    Content-Type = "application/javascript"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
   for = "*.js"
     [headers.values]
+    Content-Type = "application/javascript"
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
   for = "*.css"
     [headers.values]
+    Content-Type = "text/css"
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]

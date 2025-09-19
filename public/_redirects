@@ -1,12 +1,25 @@
-# Netlify redirects for React Router
-# Static assets should be served normally
-/static/* /static/:splat 200
+# Static assets must come FIRST to prevent redirection
+/static/css/* /static/css/:splat 200!
+/static/js/* /static/js/:splat 200!
+/static/media/* /static/media/:splat 200!
+/favicon.ico /favicon.ico 200!
+/manifest.json /manifest.json 200!
+/logo192.png /logo192.png 200!
+/logo512.png /logo512.png 200!
 
-# Handle specific driver portal routes
+# Driver portal routes (must be exact paths)
 /driver/login /index.html 200
 /driver/dashboard /index.html 200
 /driver/active-rides /index.html 200
 /driver/history /index.html 200
+/driver /index.html 200
 
-# Handle all other routes with React Router (but not static files)
-/* /index.html 200
+# Customer routes
+/ /index.html 200
+/bids /index.html 200
+/confirm /index.html 200
+/success /index.html 200
+/history /index.html 200
+
+# Fallback for any other routes (but not files with extensions)
+/:path /index.html 200
