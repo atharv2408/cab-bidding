@@ -222,7 +222,11 @@ function App() {
 
   if (isDriverMode) {
     console.log('🚗 Switching to Driver Mode for path:', currentPath);
-    return <DriverApp ReverseGeocode={ReverseGeocode} />;
+    return (
+      <Router>
+        <DriverApp ReverseGeocode={ReverseGeocode} />
+      </Router>
+    );
   }
 
   console.log('👥 Staying in Customer Mode for path:', currentPath);

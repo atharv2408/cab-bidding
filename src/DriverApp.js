@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Route, Routes, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import ErrorBoundary from './components/ErrorBoundary';
 import DriverLogin from './components/DriverLogin';
 import DriverDashboard from './pages/DriverDashboard';
 import DriverHistory from './pages/DriverHistory';
@@ -199,7 +200,7 @@ function DriverApp({ ReverseGeocode }) {
   }
 
   return (
-    <Router>
+    <ErrorBoundary>
       <div className="DriverApp">
         {driver && (
           <DriverNavigationBar 
@@ -277,7 +278,7 @@ function DriverApp({ ReverseGeocode }) {
           </Routes>
         </main>
       </div>
-    </Router>
+    </ErrorBoundary>
   );
 }
 
