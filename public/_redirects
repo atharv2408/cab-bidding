@@ -1,12 +1,12 @@
 # Netlify redirects for React Router
-# Handle all routes with React Router
+# Static assets should be served normally
+/static/* /static/:splat 200
+
+# Handle specific driver portal routes
+/driver/login /index.html 200
+/driver/dashboard /index.html 200
+/driver/active-rides /index.html 200
+/driver/history /index.html 200
+
+# Handle all other routes with React Router (but not static files)
 /* /index.html 200
-
-# Specific redirects for driver portal
-/driver/* /index.html 200
-
-# Handle API routes if needed
-/api/* https://your-api-domain.com/api/:splat 200
-
-# Handle 404s
-/404 /index.html 200

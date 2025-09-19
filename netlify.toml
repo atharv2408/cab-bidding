@@ -7,14 +7,21 @@
   command = "npm run build"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/static/*"
+  to = "/static/:splat"
   status = 200
 
 [[redirects]]
   from = "/driver/*"
   to = "/index.html"
   status = 200
+  force = false
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
 
 [[headers]]
   # Define which paths this specific [[headers]] block will cover.
