@@ -1,0 +1,11 @@
+{
+  "files": {
+    "main.css": "/cab-bidding/static/css/main.9ac03ad3.css",
+    "main.js": "/cab-bidding/static/js/main.bf5efec3.js",
+    "index.html": "/cab-bidding/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.9ac03ad3.css",
+    "static/js/main.bf5efec3.js"
+  ]
+}
