@@ -1,25 +1,6 @@
-# Static assets must come FIRST to prevent redirection
-/static/css/* /static/css/:splat 200!
-/static/js/* /static/js/:splat 200!
-/static/media/* /static/media/:splat 200!
-/favicon.ico /favicon.ico 200!
-/manifest.json /manifest.json 200!
-/logo192.png /logo192.png 200!
-/logo512.png /logo512.png 200!
+# Simple and effective redirects for React SPA
+# Static assets are served directly (no redirect needed)
 
-# Driver portal routes (must be exact paths)
-/driver/login /index.html 200
-/driver/dashboard /index.html 200
-/driver/active-rides /index.html 200
-/driver/history /index.html 200
-/driver /index.html 200
-
-# Customer routes
-/ /index.html 200
-/bids /index.html 200
-/confirm /index.html 200
-/success /index.html 200
-/history /index.html 200
-
-# Fallback for any other routes (but not files with extensions)
-/:path /index.html 200
+# SPA routes - redirect to index.html
+/driver/*  /index.html  200
+/*  /index.html  200

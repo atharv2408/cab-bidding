@@ -1,76 +1,27 @@
 [build]
-  # Directory to change to before starting a build.
-  base = ""
-  # Directory (relative to root of your repo) that contains the deploy-ready HTML files and assets.
   publish = "build"
-  # Default build command.
   command = "npm run build"
 
-# Static assets with highest priority (force = true)
-[[redirects]]
-  from = "/static/css/*"
-  to = "/static/css/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/static/js/*"
-  to = "/static/js/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/static/media/*"
-  to = "/static/media/:splat"
-  status = 200
-  force = true
-
-# Driver portal routes
-[[redirects]]
-  from = "/driver/*"
-  to = "/index.html"
-  status = 200
-
-# All other routes (fallback)
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
+# Only essential headers for static assets
 [[headers]]
-  # Define which paths this specific [[headers]] block will cover.
-  for = "/*"
-    [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Cache-Control = "public, max-age=31536000"
-
-[[headers]]
-  for = "/static/css/*"
-    [headers.values]
-    Content-Type = "text/css"
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/static/js/*"
-    [headers.values]
+  for = "/static/js/*.js"
+  [headers.values]
     Content-Type = "application/javascript"
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "*.js"
-    [headers.values]
-    Content-Type = "application/javascript"
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.css"
-    [headers.values]
+  for = "/static/css/*.css"
+  [headers.values]
     Content-Type = "text/css"
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
   for = "/index.html"
-    [headers.values]
-    Cache-Control = "no-cache"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
