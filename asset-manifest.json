@@ -1,11 +1,13 @@
 {
   "files": {
-    "main.css": "/cab-bidding/static/css/main.9ac03ad3.css",
-    "main.js": "/cab-bidding/static/js/main.bf5efec3.js",
-    "index.html": "/cab-bidding/index.html"
+    "main.css": "/cab-bidding/static/css/main.c1529528.css",
+    "main.js": "/cab-bidding/static/js/main.f5a4b297.js",
+    "index.html": "/cab-bidding/index.html",
+    "main.c1529528.css.map": "/cab-bidding/static/css/main.c1529528.css.map",
+    "main.f5a4b297.js.map": "/cab-bidding/static/js/main.f5a4b297.js.map"
   },
   "entrypoints": [
-    "static/css/main.9ac03ad3.css",
-    "static/js/main.bf5efec3.js"
+    "static/css/main.c1529528.css",
+    "static/js/main.f5a4b297.js"
   ]
 }
