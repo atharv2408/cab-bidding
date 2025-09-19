@@ -2,7 +2,7 @@
   "name": "cab-bidding-system",
   "version": "1.0.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "https://atharv2408.github.io/cab-bidding",
   "dependencies": {
     "@supabase/supabase-js": "^2.54.0",
     "axios": "^1.8.4",
@@ -36,5 +36,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }
