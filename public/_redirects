@@ -1,6 +1,1 @@
-# Simple and effective redirects for React SPA
-# Static assets are served directly (no redirect needed)
-
-# SPA routes - redirect to index.html
-/driver/*  /index.html  200
-/*  /index.html  200
+/*    /index.html   200
