@@ -179,7 +179,20 @@ const NavigationBar = ({ user, handleLogout, isMenuOpen, toggleMenu }) => {
 };
 
 function App() {
+  console.log('🏗️ App component rendered');
+  return (
+    <Router>
+      <AppContent />
+    </Router>
+  );
+}
+
+// Main App Content with routing logic
+function AppContent() {
+  console.log('🌐 AppContent component rendered');
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  console.log('📍 Current path detected:', currentPath);
 
   useEffect(() => {
     // Listen to URL changes
@@ -222,15 +235,33 @@ function App() {
 
   if (isDriverMode) {
     console.log('🚗 Switching to Driver Mode for path:', currentPath);
-    return (
-      <Router>
-        <DriverApp ReverseGeocode={ReverseGeocode} />
-      </Router>
-    );
+    try {
+      return <DriverApp ReverseGeocode={ReverseGeocode} />;
+    } catch (error) {
+      console.error('❌ Error rendering DriverApp:', error);
+      return (
+        <div style={{padding: '20px', background: '#000', color: '#fff', minHeight: '100vh'}}>
+          <h2>🚗 Driver Portal Error</h2>
+          <p>Error loading driver portal: {error.message}</p>
+          <button onClick={() => window.location.href = '/'}>Go to Home</button>
+        </div>
+      );
+    }
   }
 
   console.log('👥 Staying in Customer Mode for path:', currentPath);
-  return <CustomerApp />;
+  try {
+    return <CustomerApp />;
+  } catch (error) {
+    console.error('❌ Error rendering CustomerApp:', error);
+    return (
+      <div style={{padding: '20px', background: '#000', color: '#fff', minHeight: '100vh'}}>
+        <h2>👥 Customer Portal Error</h2>
+        <p>Error loading customer portal: {error.message}</p>
+        <button onClick={() => window.location.reload()}>Reload Page</button>
+      </div>
+    );
+  }
 }
 
 // Customer App Component
@@ -355,7 +386,7 @@ function CustomerApp() {
   }
 
   return (
-    <Router>
+    <>
       {!user ? (
         <CustomerAuth onLogin={handleLogin} onDriverLogin={handleDriverLogin} />
       ) : (
@@ -399,7 +430,7 @@ function CustomerApp() {
           </main>
         </div>
       )}
-    </Router>
+    </>
   );
 }
 
