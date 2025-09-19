@@ -1,6 +1,12 @@
 [build]
   publish = "build"
   command = "npm run build"
+  
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+  CI = "false"
+  GENERATE_SOURCEMAP = "false"
 
 # Only essential headers for static assets
 [[headers]]
